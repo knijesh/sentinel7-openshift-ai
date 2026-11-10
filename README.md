@@ -15,6 +15,7 @@ Built by Nijesh Kanjinghat.
 
 | | |
 |---|---|
+| **Article** | [How a 3B Model Beat 70B: Fine-tuning and Post-training on Red Hat OpenShift AI →](https://medium.com/@nijesh-kanjinghat/how-a-3b-model-beat-70b-fine-tuning-and-post-training-on-red-hat-openshift-ai-d439782b59c8) The full technical write-up on Medium. |
 | **Interactive overview** | [The value of OpenShift AI, step by step →](https://knijesh.github.io/sentinel7-openshift-ai/) |
 | **Demo app (replay)** | [Sentinel-7 Ops Console →](https://knijesh.github.io/sentinel7-openshift-ai/console/) Pick a held-out radio note and compare five models side by side: the untuned model, three fine-tuned adapters on vLLM (GPU) and the 4-bit edge model on llama.cpp (CPU). Every answer is real, recorded on Red Hat OpenShift AI. **For the live instance, contact Nijesh Kanjinghat.** |
 
