@@ -72,6 +72,9 @@ p{margin:0}
 .theme-btn svg{width:16px; height:16px; fill:currentColor}
 @media (max-width:600px){.brand span{display:none}}
 .brand b{font-weight:600}
+a.brand{color:inherit; text-decoration:none}
+a.brand:hover b{text-decoration:underline}
+a.brand:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .mast nav{display:flex; height:100%; overflow-x:auto; scrollbar-width:none}
 .mast nav::-webkit-scrollbar{display:none}
 .mast nav a{color:#c6c6c6; font-size:14px; padding:0 16px; display:flex; align-items:center; white-space:nowrap; border-bottom:2px solid transparent; transition:color .11s, background .11s}
@@ -451,7 +454,7 @@ footer b{color:#f4f4f4; font-weight:600}
 
 <header class="mast">
   <div class="wrap">
-    <div class="brand"><b>Sentinel-7</b><span>· Fine-tuning and post-training on Red Hat OpenShift AI</span></div>
+    <a class="brand" href="./" id="home" title="Back to the top" aria-label="Sentinel-7 home"><b>Sentinel-7</b><span>· Fine-tuning and post-training on Red Hat OpenShift AI</span></a>
     <nav aria-label="Sections">
       <a href="#premise">Premise</a>
       <a href="#value">Value</a>
@@ -1266,6 +1269,7 @@ function dimDotsInBoxes(svg){
   dots[0].before(g); dots.forEach(d=>g.appendChild(d));
   (svg.querySelector('defs')||svg).appendChild(m);
 }
+document.getElementById('home').addEventListener('click',e=>{ e.preventDefault(); try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){} scrollTo({top:0,behavior:'smooth'}); });
 function bindCopy(root){
   $$('.copy', root).forEach(b=>b.addEventListener('click',()=>{
     const pre = b.closest('.code').querySelector('pre'); const txt = pre.textContent;
