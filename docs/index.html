@@ -853,14 +853,14 @@ const DOT = (path, dur, begin=0, cls='') => `<circle class="d-dot ${cls}" r="4.5
 const DIAG = {
 sdg: `<svg viewBox="0 0 520 290" role="img" aria-label="SDG Hub flow for burst lines: 400 seed reports go through prompt builder, LLM chat block calling a teacher model served in the project, extractor and filter; 173 pass into the training set, 227 are dropped">
   ${DEFS('sdg')}
-  <rect class="d-box" x="125" y="10" width="388" height="96" style="stroke-dasharray:5 4"/>
-  <text class="d-t s" x="135" y="28">SDG HUB FLOW · flow.yaml · blocks run in order</text>
-  ${box(10,41,95,50,'', 'Seed data','400 reports')}
-  ${box(135,40,88,48,'purple','PromptBuilder','fill template')}
-  ${box(237,40,78,48,'purple','LLMChat','generate')}
-  ${box(329,40,80,48,'purple','Extractor','parse answer')}
-  ${box(423,40,80,48,'teal','Filter','judge or rules')}
-  ${AR('sdg','M105 66H133')}${AR('sdg','M223 64H235')}${AR('sdg','M315 64H327')}${AR('sdg','M409 64H421')}
+  <rect class="d-box" x="117" y="10" width="396" height="96" style="stroke-dasharray:5 4"/>
+  <text class="d-t s" x="127" y="28">SDG HUB FLOW · flow.yaml · blocks run in order</text>
+  ${box(10,40,95,48,'', 'Seed data','400 reports')}
+  ${box(125,40,100,48,'purple','PromptBuilder','fill template')}
+  ${box(237,40,74,48,'purple','LLMChat','generate')}
+  ${box(323,40,86,48,'purple','Extractor','parse answer')}
+  ${box(421,40,86,48,'teal','Filter','judge or rules')}
+  ${AR('sdg','M105 64H123')}${AR('sdg','M225 64H235')}${AR('sdg','M311 64H321')}${AR('sdg','M409 64H419')}
   ${box(170,150,125,48,'acc','Teacher model','vLLM in project')}
   ${AR('sdg','M262 88V148')}${AR('sdg','M290 150V90')}<text class="d-lbl" x="196" y="128">prompt</text><text class="d-lbl" x="296" y="128">answer</text>
   ${box(330,175,180,50,'fill','Training set','173 burst lines kept','w')}
@@ -868,7 +868,7 @@ sdg: `<svg viewBox="0 0 520 290" role="img" aria-label="SDG Hub flow for burst l
   ${AR('sdg','M470 88V173')}<text class="d-lbl" x="476" y="140">pass</text>
   ${AR('sdg','M440 88V140H320V260H328')}<text class="d-lbl" x="400" y="134">fail</text>
   <text class="d-t m" x="10" y="232">data and teacher stay</text><text class="d-t m" x="10" y="248">inside the project</text>
-  ${DOT('M58 66H470V173',3.4)}${DOT('M58 66H470V173',3.4,1.1)}${DOT('M58 66H440V140H320V260H330',3.4,2.2,'r')}
+  ${DOT('M58 64H470V173',3.4)}${DOT('M58 64H470V173',3.4,1.1)}${DOT('M58 64H440V140H320V260H330',3.4,2.2,'r')}
 </svg>`,
 train: `<svg viewBox="0 0 520 270" role="img" aria-label="Notebook submits a TrainJob, Kueue queues it onto a GPU slice, the job writes a LoRA adapter">
   ${DEFS('tr')}
@@ -893,7 +893,7 @@ align: `<svg viewBox="0 0 480 270" role="img" aria-label="GRPO loop: policy samp
   ${box(180,200,120,48,'teal','Rule checker','B1–B7 · reward 0–1')}
   ${box(10,106,130,48,'fill','LoRA update','toward better answers','w')}
   ${AR('al','M300 38Q405 38 405 104')}${AR('al','M405 154Q405 224 302 224')}${AR('al','M180 224Q75 224 75 156')}${AR('al','M75 106Q75 38 178 38')}
-  <text class="d-lbl" x="360" y="62">sample</text><text class="d-lbl" x="372" y="204">score</text><text class="d-lbl" x="62" y="204">update</text><text class="d-lbl" x="70" y="62">next iteration</text>
+  <text class="d-lbl" x="414" y="66">sample</text><text class="d-lbl" x="414" y="200">score</text><text class="d-lbl" x="14" y="200">update</text><text class="d-lbl" x="14" y="66">next</text><text class="d-lbl" x="14" y="78">iteration</text>
   <text class="d-t b" x="216" y="128">GRPO</text><text class="d-t s" x="178" y="146">8 samples × 16 reports</text>
   ${DOT('M300 38Q405 38 405 106L405 154Q405 224 300 224L180 224Q75 224 75 154L75 106Q75 38 180 38Z',5)}
   ${DOT('M300 38Q405 38 405 106L405 154Q405 224 300 224L180 224Q75 224 75 154L75 106Q75 38 180 38Z',5,2.5)}
@@ -902,7 +902,7 @@ track: `<svg viewBox="0 0 480 270" role="img" aria-label="MLflow runs are regist
   ${DEFS('tk')}
   <text class="d-t s" x="10" y="16">MLFLOW RUNS · PROJECT-SCOPED</text>
   ${['lora-v1-bf16','lora-dpo-balanced','lora-v2-radio-data'].map((n,i)=>`<rect class="d-box" x="10" y="${24+i*32}" width="200" height="26"/><text class="d-t m" x="18" y="${41+i*32}">${n}</text><path class="d-draw" style="stroke:var(--anim);stroke-width:1.5;fill:none;animation-delay:${i*.4}s" d="M150 ${44+i*32}C160 ${30+i*32} 170 ${41+i*32} 202 ${38+i*32}"/>`).join('')}
-  ${AR('tk','M110 114V154')}<text class="d-lbl" x="118" y="138">register</text>
+  ${AR('tk','M110 114V156')}<text class="d-lbl" x="118" y="138">register</text>
   <text class="d-t s" x="250" y="40">promote = move an alias</text><text class="d-t s" x="250" y="58">serving reads the alias</text>
   ${[['v1','SFT','92.7%'],['v2','v1 + DPO','99.7%'],['v3','SFT v2','99.7–100%'],['v4','edge GGUF','97%']].map((v,i)=>`<rect class="d-box ${i===2?'acc':''}" x="${10+i*116}" y="158" width="106" height="56"/><text class="d-t b" x="${20+i*116}" y="178">${v[0]} · ${v[1]}</text><text class="d-t s" x="${20+i*116}" y="196">exact ${v[2]}</text>`).join('')}
   <g class="d-alias"><rect x="10" y="226" width="106" height="24" class="d-box fill"/><text class="d-t w b" x="22" y="242">@champion</text></g>
@@ -927,11 +927,11 @@ gate: `<svg viewBox="0 0 480 270" role="img" aria-label="Pipeline: load held-out
   ${box(150,40,120,50,'acc','Evaluate','champion · v2')}
   ${box(150,170,120,50,'purple','Evaluate','challenger · DPO')}
   <polygon class="d-box teal" points="330,130 375,95 420,130 375,165"/><text class="d-t b" x="358" y="134">Gate</text>
-  ${box(370,14,100,44,'', 'Promote','move alias')}
-  ${box(370,206,100,44,'fill','Keep champion','logged to MLflow','w')}
+  ${box(366,14,108,44,'', 'Promote','move alias')}
+  ${box(366,206,108,44,'fill','Keep champion','logged to MLflow','w')}
   ${LN('M110 130H130')}${AR('gt','M130 130V65H148')}${AR('gt','M130 130V195H148')}
   ${LN('M270 65H300V130')}${LN('M270 195H300V130')}${AR('gt','M300 130H328')}
-  ${AR('gt','M375 95V60',true)}<text class="d-lbl" x="382" y="82">if challenger wins</text>
+  ${AR('gt','M375 95V60',true)}<text class="d-lbl" x="382" y="78">if challenger</text><text class="d-lbl" x="382" y="90">wins</text>
   ${AR('gt','M375 165V204')}<text class="d-lbl" x="382" y="188">100 vs 100</text>
   ${DOT('M60 130H130V65H300V130H375V206',3.4)}${DOT('M60 130H130V195H300V130H375V206',3.4,1.7)}
 </svg>`
