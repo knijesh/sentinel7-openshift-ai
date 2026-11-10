@@ -132,7 +132,7 @@ one node.
 
 | Path | What |
 |---|---|
-| `notebooks/` | The six notebooks, and `build.py`, which writes them from plain cell lists |
+| `notebooks/` | The six notebooks |
 | `data/edgecopilot/` | Radio notes with their exact reports: train 2,400 (+600 radio-style in `train-v2`), val 150, test 300 |
 | `data/burst/` | Reports and priorities for the burst line: train 400, val 100, test 200; teacher answers (all, and checker-approved) |
 | `sdg_flows/burst_teacher/` | The SDG Hub flow (YAML) and its prompt |
