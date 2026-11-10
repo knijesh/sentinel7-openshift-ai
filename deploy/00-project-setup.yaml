@@ -1,0 +1,70 @@
+# One-time project setup. Apply once, as a project admin:
+#   envsubst < deploy/00-project-setup.yaml | oc apply -n <project> -f -
+#
+# 1. `workspace` volume: base model, data, checkpoints, exports. Shared by the workbench, training jobs and serving.
+#    ReadWriteMany storage is best. With ReadWriteOnce storage, set NODE_SELECTOR in the workbench so every pod that
+#    mounts it lands on the same node (see sentinel7/config.py).
+# 2. MLflow access for the project's service accounts (training jobs log to the project's MLflow).
+# 3. Workbench permissions: lets the notebooks start jobs and model servers with the workbench's own identity.
+#    Replace WORKBENCH with your workbench name (its service account has the same name).
+#
+# Also needed, from a cluster admin (namespace admins cannot grant it themselves):
+#   oc create rolebinding training-edit --clusterrole=training-edit --serviceaccount=${NAMESPACE}:WORKBENCH -n ${NAMESPACE}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${WORKSPACE_PVC}
+  labels: {app.kubernetes.io/part-of: sentinel7}
+spec:
+  accessModes: ["ReadWriteOnce"]        # ReadWriteMany if your cluster offers it
+  # storageClassName: <your storage class>
+  resources:
+    requests: {storage: 100Gi}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel7-mlflow
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: mlflow}
+subjects:
+- {apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:${NAMESPACE}"}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel7-mlflow-integration
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: mlflow-operator-mlflow-integration}
+subjects:
+- {apiGroup: rbac.authorization.k8s.io, kind: Group, name: "system:serviceaccounts:${NAMESPACE}"}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentinel7-workbench
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["serving.kserve.io"]
+  resources: ["llminferenceservices", "inferenceservices", "servingruntimes"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["datasciencepipelinesapplications.opendatahub.io"]
+  resources: ["datasciencepipelinesapplications"]
+  verbs: ["get", "list", "create", "patch"]
+- apiGroups: ["route.openshift.io"]
+  resources: ["routes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel7-workbench
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: sentinel7-workbench}
+subjects:
+- {kind: ServiceAccount, name: WORKBENCH, namespace: "${NAMESPACE}"}

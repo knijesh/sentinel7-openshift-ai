@@ -1,0 +1,36 @@
+# SDG Hub flow: a teacher model writes one satellite burst line per BD-SCR report (training examples for SFT).
+# Three blocks run in order: build the prompt -> call the teacher -> extract the answer.
+metadata:
+  name: Sentinel-7 Burst Teacher Flow
+  description: A larger teacher model writes one SATCOM burst line per report, by the burst rules of MM-S7-001 §7.
+  version: 1.0.0
+  author: Nijesh Kanjinghat
+  license: Apache-2.0
+  tags: [sft-targets, structured-generation]
+  dataset_requirements:
+    required_columns: [rules, task]
+    description: The burst rules and one JSON task (priority + BD-SCR report) per row.
+blocks:
+  - block_type: PromptBuilderBlock
+    block_config:
+      block_name: burst_prompt
+      input_cols: {rules: rules, task: task}
+      output_cols: burst_messages
+      prompt_config_path: burst_teacher.yaml
+
+  - block_type: LLMChatBlock
+    block_config:
+      block_name: gen_burst
+      input_cols: burst_messages
+      output_cols: burst_response
+      async_mode: true
+      n: 1
+      max_tokens: 200
+      temperature: 0.3
+
+  - block_type: LLMResponseExtractorBlock
+    block_config:
+      block_name: parse_burst
+      input_cols: burst_response
+      field_prefix: burst_
+      extract_content: true

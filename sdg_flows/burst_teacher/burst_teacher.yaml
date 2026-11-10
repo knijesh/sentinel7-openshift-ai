@@ -1,0 +1,7 @@
+- role: system
+  content: |
+    {{rules}}
+
+- role: user
+  content: |
+    {{task}}

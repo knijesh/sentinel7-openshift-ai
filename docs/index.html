@@ -1,0 +1,1366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sentinel-7 on OpenShift AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: Carbon 2x grid product page. Sticky masthead, light-weight Plex hero with live note->report demo,
+   then full-bleed bands: layers stack, click-through workflow (stepper + switcher + animated diagram + code),
+   method picker, results charts, comparison table, expectations, get started. Square corners throughout. */
+:root{
+  --bg:#ffffff; --layer:#f4f4f4; --layer2:#e8e8e8; --layer-hover:#e5e5e5;
+  --border:#e0e0e0; --border-strong:#8d8d8d;
+  --fg:#161616; --fg2:#525252; --fg3:#6f6f6f; --fg-on-accent:#ffffff;
+  --accent:#0f62fe; --accent-hover:#0050e6; --accent-text:#0f62fe; --accent-soft:#edf5ff; --accent-line:#a6c8ff;
+  --inverse-bg:#161616; --inverse-fg:#f4f4f4; --inverse-fg2:#c6c6c6; --inverse-border:#393939;
+  --teal:#007d79; --purple:#8a3ffc; --cyan:#1192e8; --magenta:#d02670;
+  --good:#24a148; --warn:#8e6a00; --warn-bg:#fcf4d6; --bad:#da1e28;
+  --muted-bar:#c6c6c6;
+  --code-bg:#f4f4f4;
+  --anim:#161616; --anim-on:#ffffff;   /* animated marks: black on light, white on dark */
+  --f-sans:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono:"IBM Plex Mono", Menlo, Consolas, monospace;
+  --max:1312px;
+  --ease:cubic-bezier(.2,0,.38,.9);
+  --ease-exp:cubic-bezier(0,0,.3,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161616; --layer:#262626; --layer2:#393939; --layer-hover:#333333;
+  --border:#393939; --border-strong:#6f6f6f;
+  --fg:#f4f4f4; --fg2:#c6c6c6; --fg3:#a8a8a8; --fg-on-accent:#ffffff;
+  --accent:#0f62fe; --accent-hover:#0353e9; --accent-text:#78a9ff; --accent-soft:#001d6c; --accent-line:#0043ce;
+  --inverse-bg:#f4f4f4; --inverse-fg:#161616; --inverse-fg2:#525252; --inverse-border:#c6c6c6;
+  --teal:#08bdba; --purple:#a56eff; --cyan:#33b1ff; --magenta:#ff7eb6;
+  --good:#42be65; --warn:#f1c21b; --warn-bg:#302400; --bad:#fa4d56;
+  --muted-bar:#6f6f6f; --code-bg:#262626; --anim:#ffffff; --anim-on:#161616; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161616; --layer:#262626; --layer2:#393939; --layer-hover:#333333;
+  --border:#393939; --border-strong:#6f6f6f;
+  --fg:#f4f4f4; --fg2:#c6c6c6; --fg3:#a8a8a8; --fg-on-accent:#ffffff;
+  --accent:#0f62fe; --accent-hover:#0353e9; --accent-text:#78a9ff; --accent-soft:#001d6c; --accent-line:#0043ce;
+  --inverse-bg:#f4f4f4; --inverse-fg:#161616; --inverse-fg2:#525252; --inverse-border:#c6c6c6;
+  --teal:#08bdba; --purple:#a56eff; --cyan:#33b1ff; --magenta:#ff7eb6;
+  --good:#42be65; --warn:#f1c21b; --warn-bg:#302400; --bad:#fa4d56;
+  --muted-bar:#6f6f6f; --code-bg:#262626; --anim:#ffffff; --anim-on:#161616; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:64px}
+body{background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:60; background:#161616}
+a{color:var(--accent-text); text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+h1,h2,h3,h4{margin:0; font-weight:400; text-wrap:balance}
+p{margin:0}
+.wrap{max-width:var(--max); margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-size:14px; letter-spacing:.16px; color:var(--fg2); display:flex; gap:8px; align-items:center}
+.eyebrow b{font-weight:600; color:var(--fg)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Masthead */
+.mast{position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:#161616; color:#f4f4f4; border-bottom:1px solid #393939}
+.mast .wrap{display:flex; align-items:center; height:48px; gap:24px}
+.brand{font-size:14px; letter-spacing:.16px; white-space:nowrap; display:flex; gap:6px; margin-right:auto; min-width:0; overflow:hidden; text-overflow:ellipsis}
+.theme-btn{all:unset; cursor:pointer; display:flex; align-items:center; gap:8px; height:48px; padding:0 14px; font-size:13px; color:#c6c6c6; border-left:1px solid #393939; white-space:nowrap}
+.theme-btn:hover{background:#262626; color:#f4f4f4}
+.theme-btn:focus-visible{outline:2px solid #ffffff; outline-offset:-2px}
+.theme-btn svg{width:16px; height:16px; fill:currentColor}
+@media (max-width:600px){.brand span{display:none}}
+.brand b{font-weight:600}
+.mast nav{display:flex; height:100%; overflow-x:auto; scrollbar-width:none}
+.mast nav::-webkit-scrollbar{display:none}
+.mast nav a{color:#c6c6c6; font-size:14px; padding:0 16px; display:flex; align-items:center; white-space:nowrap; border-bottom:2px solid transparent; transition:color .11s, background .11s}
+.mast nav a:hover{color:#f4f4f4; background:#262626; text-decoration:none}
+.mast nav a.on{color:#f4f4f4; border-bottom-color:#4589ff}
+@media (max-width:900px){.mast nav{display:none}}
+
+/* Buttons */
+.btn{display:inline-flex; align-items:center; justify-content:space-between; gap:32px; min-height:48px; padding:12px 16px; font:400 14px/1.3 var(--f-sans); letter-spacing:.16px; border:1px solid transparent; cursor:pointer; transition:background .11s var(--ease); text-decoration:none!important}
+.btn svg{width:16px; height:16px; flex:none}
+.btn-primary{background:var(--accent); color:#fff; padding-right:16px; min-width:220px}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{background:transparent; color:var(--accent-text); border-color:var(--accent-text); min-width:200px}
+.btn-ghost:hover{background:var(--accent-soft)}
+.btn-row{display:flex; flex-wrap:wrap; gap:16px}
+
+/* Hero */
+.hero{position:relative; overflow:hidden; border-bottom:1px solid var(--border)}
+.hero-grid-bg{position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size:64px 64px; opacity:.45; mask-image:linear-gradient(110deg, transparent 35%, #000 75%); -webkit-mask-image:linear-gradient(110deg, transparent 35%, #000 75%)}
+.hero .wrap{position:relative; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:48px; padding-block:72px 64px; align-items:center}
+.hero h1{font-size:clamp(36px, 5vw, 60px); line-height:1.12; font-weight:300; letter-spacing:-.5px; margin-top:16px}
+.hero h1 em{font-style:normal; color:var(--accent-text)}
+.hero .lede{font-size:20px; line-height:1.45; color:var(--fg2); margin-top:24px; max-width:40ch; font-weight:300}
+.hero .btn-row{margin-top:40px}
+@media (max-width:980px){.hero .wrap{grid-template-columns:1fr; padding-block:48px}}
+
+.hero-steps{list-style:none; margin:28px 0 0; padding:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--border-strong); max-width:560px}
+.hero-steps li{padding:12px 12px 0 0; display:flex; flex-direction:column; gap:2px; counter-increment:hs; min-width:0}
+.hero-steps li::before{content:"0" counter(hs); font:500 11px var(--f-mono); color:var(--fg3)}
+.hero-steps b{font-size:15px; font-weight:600}
+.hero-steps span{font-size:12px; color:var(--fg2)}
+@media (max-width:520px){.hero-steps{grid-template-columns:1fr 1fr; row-gap:12px}}
+
+/* Hero demo card */
+.demo{background:var(--layer); border:1px solid var(--border); position:relative}
+.demo-head{display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border); font-size:12px; letter-spacing:.32px; color:var(--fg2)}
+.demo-head .live{display:flex; gap:8px; align-items:center}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--good); box-shadow:0 0 0 0 var(--good); animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--good) 60%, transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.demo-body{padding:16px; display:grid; gap:12px}
+.note{font:400 13px/1.55 var(--f-mono); color:var(--fg); background:var(--bg); border-left:3px solid var(--magenta); padding:12px 14px; min-height:96px}
+.note .caret{display:inline-block; width:7px; height:15px; background:var(--fg); vertical-align:-2px; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.lbl{font-size:12px; letter-spacing:.32px; color:var(--fg3); display:flex; justify-content:space-between}
+.pipe-mini{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--fg2); flex-wrap:wrap}
+.pipe-mini span{padding:4px 8px; background:var(--bg); border:1px solid var(--border); transition:all .3s}
+.pipe-mini span.on{background:var(--anim); color:var(--anim-on); border-color:var(--anim)}
+.pipe-mini i{font-style:normal; color:var(--fg3)}
+.json{font:400 12.5px/1.6 var(--f-mono); background:var(--bg); padding:12px 14px; border-left:3px solid var(--anim); overflow-x:auto; white-space:normal; color:var(--fg2)}
+.json .k{color:var(--purple)} .json .s{color:var(--teal)} .json .n{color:var(--cyan)}
+.json .ln{display:block; white-space:pre; margin:0; padding:0; border:0; min-height:0; transition:opacity .3s, background .3s}
+.json br,.json hr{display:none}
+.note-wrap{display:grid}
+.note-wrap > *{grid-area:1/1}
+.note-wrap .ghost{visibility:hidden}
+.json.run .ln{opacity:.25}
+.json.run .ln.show{opacity:1}
+.json .ln.flash{background:var(--layer2)}
+.demo-foot{display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--border)}
+.demo-foot div{padding:10px 16px; font-size:12px; color:var(--fg2)}
+.demo-foot div+div{border-left:1px solid var(--border)}
+.demo-foot b{display:block; font-size:18px; font-weight:400; color:var(--fg); font-variant-numeric:tabular-nums}
+
+/* Stats band */
+.stats{border-bottom:1px solid var(--border)}
+.stats .wrap{display:grid; grid-template-columns:repeat(4,1fr)}
+.stat{padding:32px 16px 32px 0; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:4px}
+.stat+.stat{padding-left:24px}
+.stat:last-child{border-right:0}
+.stat .big{font-size:clamp(32px,3.4vw,42px); font-weight:300; line-height:1.15; font-variant-numeric:tabular-nums}
+.stat .big small{font-size:.5em; color:var(--fg3); margin:0 4px}
+.stat p{font-size:14px; color:var(--fg2); max-width:28ch}
+@media (max-width:820px){.stats .wrap{grid-template-columns:1fr 1fr}.stat{padding:24px 12px!important; border-bottom:1px solid var(--border)}.stat:nth-child(2n){border-right:0}}
+
+/* Sections */
+.band{padding-block:96px; border-bottom:1px solid var(--border)}
+.band.alt{background:var(--layer)}
+.band.dark{background:#161616; color:#f4f4f4; border-bottom-color:#393939}
+.sec-head{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; margin-bottom:48px; align-items:end}
+.sec-head h2{font-size:clamp(28px,3.2vw,42px); line-height:1.2; font-weight:300; margin-top:12px}
+.sec-head p{font-size:18px; line-height:1.5; color:var(--fg2); font-weight:300; max-width:52ch}
+@media (max-width:820px){.sec-head{grid-template-columns:1fr}.band{padding-block:64px}}
+
+/* Premise */
+.prem{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; background:var(--border); border:1px solid var(--border)}
+.prem-cell{background:var(--bg); padding:28px 24px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.prem-cell h3{font-size:22px; font-weight:400}
+.prem-cell p{font-size:15px; color:var(--fg2)}
+.prem-cell p b{color:var(--fg); font-weight:600}
+.ptag{font:500 11px var(--f-mono); letter-spacing:.32px; text-transform:uppercase; color:var(--accent-text)}
+.pnote{display:block; font:400 12.5px/1.5 var(--f-mono); background:var(--layer); border-left:3px solid var(--magenta); padding:10px 12px; color:var(--fg); white-space:pre-wrap; word-break:break-word}
+.plist{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.plist li{font-size:15px; color:var(--fg2); display:grid; grid-template-columns:64px 1fr; gap:10px}
+.plist li .mono{font-size:11px; font-weight:500; color:var(--fg); background:var(--layer2); padding:2px 6px; height:max-content; text-align:center}
+.journey-head{margin-top:56px; margin-bottom:16px}
+.journey{display:grid; grid-template-columns:minmax(0,1fr) 36px minmax(0,1.3fr) 36px minmax(0,1.3fr) 36px minmax(0,1fr); align-items:stretch}
+.jn{border:1px solid var(--border-strong); padding:16px; display:flex; flex-direction:column; gap:6px; background:var(--bg); min-width:0; animation:jglow 6s var(--ease) infinite}
+.journey .jn:nth-child(3){animation-delay:1.5s} .journey .jn:nth-child(5){animation-delay:3s} .journey .jn:nth-child(7){animation-delay:4.5s}
+@keyframes jglow{0%,18%{border-color:var(--anim); box-shadow:inset 0 4px 0 var(--anim)}26%,100%{border-color:var(--border-strong); box-shadow:inset 0 4px 0 transparent}}
+.jn .meth{font:500 11px var(--f-mono); letter-spacing:.32px; align-self:flex-start; padding:2px 8px; background:var(--anim); color:var(--anim-on)}
+.jn.src{border-left:3px solid var(--magenta)}
+.jn.dst{background:var(--layer)}
+.jn b{font-size:15px; font-weight:600; line-height:1.3}
+.jk{font:500 11px var(--f-mono); letter-spacing:.32px; color:var(--fg3)}
+.js{font-size:13px; color:var(--fg2)}
+.jarrow{position:relative; align-self:center; height:2px; background:var(--border)}
+.jarrow i{position:absolute; top:-3px; left:0; width:8px; height:8px; background:var(--anim); animation:jmove 1.5s linear infinite}
+@keyframes jmove{from{left:0}to{left:calc(100% - 8px)}}
+.jside{margin-top:12px; font-size:14px; color:var(--fg2); border:1px dashed var(--border-strong); padding:12px 16px}
+.jside .mono{font-size:12.5px; color:var(--fg)}
+.show{margin-top:56px; border-top:1px solid var(--border); padding-top:24px}
+.show-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin-top:20px}
+.show-grid h4{font-size:20px; font-weight:400; margin-top:8px}
+.show-grid p{font-size:15px; color:var(--fg2); margin-top:8px}
+.sn{font:500 12px var(--f-mono); color:var(--accent-text)}
+@media (max-width:980px){
+  .prem,.show-grid{grid-template-columns:1fr}
+  .journey{grid-template-columns:1fr}
+  .jarrow{height:20px; width:2px; justify-self:start; margin-left:24px}
+  .jarrow i{left:-3px; animation-name:jmovev}
+}
+@keyframes jmovev{from{top:0}to{top:calc(100% - 8px)}}
+
+/* Layers */
+.layers{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:32px; align-items:start}
+.stack{display:flex; flex-direction:column; gap:8px; perspective:1200px}
+.layer{all:unset; box-sizing:border-box; cursor:pointer; display:grid; grid-template-columns:56px 1fr; gap:16px; padding:20px; background:var(--bg); border:1px solid var(--border); transition:transform .4s var(--ease-exp), border-color .2s, background .2s; position:relative}
+.layer:hover{background:var(--layer-hover)}
+.layer.on{border-color:var(--accent); box-shadow:inset 4px 0 0 var(--accent)}
+.layer .tier{font:500 12px var(--f-mono); color:var(--fg3); padding-top:4px}
+.layer h3{font-size:20px; line-height:1.3}
+.layer .sub{font-size:14px; color:var(--fg2); margin-top:4px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px}
+.chip{font-size:12px; letter-spacing:.32px; padding:3px 8px; border:1px solid var(--border); background:var(--layer); color:var(--fg2); white-space:nowrap}
+.layer[data-l="3"] .chip{border-color:var(--accent-line)}
+.layer[data-l="2"] .chip{border-color:color-mix(in srgb, var(--purple) 45%, transparent)}
+.stack.intro .layer{animation:rise .7s var(--ease-exp) both}
+.stack.intro .layer:nth-child(2){animation-delay:.12s}
+.stack.intro .layer:nth-child(3){animation-delay:.24s}
+@keyframes rise{from{transform:translateY(18px)}to{transform:none}}
+.layer-detail{background:var(--bg); border:1px solid var(--border); padding:28px; position:sticky; top:72px}
+.layer-detail h3{font-size:24px; font-weight:300}
+.layer-detail .k{font-size:12px; letter-spacing:.32px; color:var(--fg3); margin-top:20px; text-transform:uppercase}
+.layer-detail ul{margin:8px 0 0; padding:0; list-style:none; display:grid; gap:10px}
+.layer-detail li{display:grid; grid-template-columns:16px 1fr; gap:10px; font-size:15px}
+.layer-detail li svg{margin-top:4px}
+.fade-swap{animation:swap .35s var(--ease-exp)}
+@keyframes swap{from{transform:translateY(6px)}to{transform:none}}
+@media (max-width:980px){.layers{grid-template-columns:1fr}.layer-detail{position:static}}
+
+/* Walkthrough */
+.stepper{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); border-top:1px solid var(--border); position:relative; overflow-x:auto}
+.step-tab{all:unset; box-sizing:border-box; cursor:pointer; padding:14px 12px 16px 0; border-top:3px solid transparent; margin-top:-2px; display:flex; flex-direction:column; gap:2px; min-width:120px; transition:border-color .2s}
+.step-tab .n{font:500 12px var(--f-mono); color:var(--fg3)}
+.step-tab .t{font-size:14px; color:var(--fg2)}
+.step-tab .tool{font-size:12px; color:var(--fg3)}
+.step-tab:hover .t{color:var(--fg)}
+.step-tab.done{border-top-color:var(--accent-line)}
+.step-tab.on{border-top-color:var(--accent)}
+.step-tab.on .t{color:var(--fg); font-weight:600}
+.step-tab.on .n{color:var(--accent-text)}
+.panel{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:32px; margin-top:32px}
+.panel-l{display:flex; flex-direction:column; gap:20px; min-width:0}
+.panel-l h3{font-size:32px; font-weight:300; line-height:1.2}
+.panel-l .tagline{font-size:18px; color:var(--fg2); font-weight:300}
+.switcher{display:inline-grid; grid-template-columns:1fr 1fr; border:1px solid var(--border-strong); width:max-content; max-width:100%}
+.switcher button{all:unset; box-sizing:border-box; cursor:pointer; padding:10px 16px; font-size:14px; color:var(--fg2); text-align:center; transition:background .15s, color .15s}
+.switcher button.on{background:var(--fg); color:var(--bg)}
+.switcher button:not(.on):hover{background:var(--layer-hover)}
+.cmp-list{list-style:none; padding:0; margin:0; display:grid; gap:12px}
+.cmp-list li{display:grid; grid-template-columns:20px 1fr; gap:10px; font-size:15px; line-height:1.45}
+.cmp-list li svg{margin-top:2px}
+.cmp-list.dev li{color:var(--fg2)}
+.evidence{background:var(--accent-soft); border-left:3px solid var(--accent); padding:16px 20px; display:grid; gap:4px}
+.evidence .k{font-size:12px; letter-spacing:.32px; color:var(--accent-text); text-transform:uppercase}
+.evidence .v{font-size:28px; font-weight:300; font-variant-numeric:tabular-nums}
+.evidence p{font-size:14px; color:var(--fg2)}
+.addon{border:1px dashed var(--border-strong); padding:14px 16px; font-size:14px; color:var(--fg2)}
+.addon b{color:var(--fg); font-weight:600}
+.panel-r{display:flex; flex-direction:column; gap:16px; min-width:0}
+.diagram{background:var(--layer); border:1px solid var(--border); padding:16px; position:relative}
+.band.alt .diagram{background:var(--bg)}
+.diagram svg{width:100%; height:auto; display:block}
+.diagram .cap{font-size:12px; letter-spacing:.32px; color:var(--fg3); margin-bottom:8px; display:flex; justify-content:space-between}
+.code{background:var(--code-bg); border:1px solid var(--border); position:relative}
+.band.alt .code{background:var(--bg)}
+.code-head{display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); font-size:12px; color:var(--fg3); padding-left:16px}
+.copy{all:unset; cursor:pointer; padding:8px 14px; font-size:12px; color:var(--accent-text)}
+.copy:hover{background:var(--layer-hover)}
+.code pre{margin:0; padding:14px 16px; font:400 12.5px/1.65 var(--f-mono); overflow-x:auto; color:var(--fg)}
+.code .c{color:var(--fg3)} .code .k{color:var(--purple)} .code .s{color:var(--teal)} .code .f{color:var(--accent-text)}
+.panel-nav{display:flex; justify-content:space-between; gap:16px; margin-top:32px; border-top:1px solid var(--border); padding-top:16px}
+.panel-nav button{all:unset; cursor:pointer; font-size:14px; color:var(--accent-text); display:flex; gap:8px; align-items:center; padding:8px 0}
+.panel-nav button[disabled]{color:var(--fg3); cursor:default}
+.nb-link{font-size:14px; display:inline-flex; gap:8px; align-items:center}
+@media (max-width:980px){.panel{grid-template-columns:1fr}}
+
+/* SVG diagram classes */
+.d-box{fill:var(--bg); stroke:var(--border-strong); stroke-width:1}
+:where(.band.alt) .d-box{fill:var(--layer)}
+.d-arrow{stroke:var(--anim); stroke-width:1.5; fill:none}
+.d-arrow.alt{stroke-dasharray:4 4; stroke:var(--fg3)}
+.d-ah{fill:var(--anim)}
+.d-ah.alt{fill:var(--fg3)}
+.d-box.bad{stroke:var(--bad); stroke-width:1.5; stroke-dasharray:4 3}
+.d-lbl{fill:var(--fg2); font:500 10px var(--f-mono)}
+.d-box.acc{stroke:var(--accent); stroke-width:1.5}
+.d-box.fill{fill:var(--anim); stroke:var(--anim)}
+.d-box.soft{fill:var(--accent-soft); stroke:var(--accent-line)}
+.d-box.purple{stroke:var(--purple); stroke-width:1.5}
+.d-box.teal{stroke:var(--teal); stroke-width:1.5}
+.d-t{fill:var(--fg); font:400 12px var(--f-sans)}
+.d-t.b{font-weight:600}
+.d-t.s{fill:var(--fg2); font-size:10.5px}
+.d-t.m{font-family:var(--f-mono); font-size:10.5px; fill:var(--fg2)}
+.d-t.w{fill:var(--anim-on)}
+.d-t.acc{fill:var(--accent-text)}
+.d-line{stroke:var(--border-strong); stroke-width:1.25; fill:none}
+.d-flow{stroke:var(--anim); stroke-width:2; fill:none; stroke-dasharray:6 8; animation:flow 1.2s linear infinite}
+.d-flow.slow{animation-duration:2.4s}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.d-dot,.d-dot.p,.d-dot.t,.d-dot.g{fill:var(--anim)}
+.d-dot.r{fill:var(--bad)}
+.d-pulse{animation:dpulse 2.4s var(--ease) infinite; transform-box:fill-box; transform-origin:center}
+@keyframes dpulse{0%,100%{opacity:1}50%{opacity:.55}}
+.d-draw{stroke-dasharray:400; stroke-dashoffset:400; animation:draw 2.6s var(--ease-exp) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.d-spin{animation:spin 8s linear infinite; transform-box:view-box; transform-origin:240px 130px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.d-alias{animation:alias 6s var(--ease) infinite}
+@keyframes alias{0%,35%{transform:translateX(0)}50%,85%{transform:translateX(232px)}100%{transform:translateX(0)}}
+
+/* Memory chart */
+.mem{display:grid; gap:14px}
+.gpu-pick{display:flex; flex-wrap:wrap; gap:0; border:1px solid var(--border-strong); width:max-content; max-width:100%}
+.gpu-pick button{all:unset; cursor:pointer; padding:8px 12px; font-size:13px; color:var(--fg2); border-right:1px solid var(--border)}
+.gpu-pick button:last-child{border-right:0}
+.gpu-pick button.on{background:var(--fg); color:var(--bg)}
+.mem-row{display:grid; grid-template-columns:64px 1fr 92px; gap:12px; align-items:center; font-size:13px}
+.mem-row .nm{font-weight:600}
+.mem-track{position:relative; height:24px; background:var(--layer2)}
+.band.alt .mem-track{background:var(--layer2)}
+.mem-bar{position:absolute; left:0; top:0; bottom:0; background:var(--accent); transition:width .8s var(--ease-exp), background .3s; border-radius:0 4px 4px 0}
+.mem-bar .rng{position:absolute; top:0; bottom:0; right:0; background:repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,.35) 4px 6px)}
+.mem-row.no .mem-bar{background:var(--muted-bar)}
+.mem-row .fit{font-size:12px; display:flex; gap:6px; align-items:center}
+.mem-row .fit.y{color:var(--good)} .mem-row .fit.n{color:var(--fg3)}
+.gpu-line{position:absolute; top:-6px; bottom:-6px; width:2px; background:var(--fg); transition:left .8s var(--ease-exp)}
+.mem-axis{display:grid; grid-template-columns:64px 1fr 92px; gap:12px; font-size:11px; color:var(--fg3)}
+.mem-axis div:nth-child(2){display:flex; justify-content:space-between}
+
+/* Method picker */
+.picker{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:0; border:1px solid var(--border); background:var(--bg)}
+.mistakes{display:flex; flex-direction:column; border-right:1px solid var(--border)}
+.mistake{all:unset; box-sizing:border-box; cursor:pointer; padding:18px 20px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; transition:background .15s}
+.mistake:last-child{border-bottom:0}
+.mistake:hover{background:var(--layer-hover)}
+.mistake.on{background:var(--layer); box-shadow:inset 3px 0 0 var(--accent)}
+.mistake .q{font-size:15px}
+.mistake .tag{font:500 11px var(--f-mono); padding:3px 8px; background:var(--layer2); color:var(--fg2); letter-spacing:.3px}
+.mistake.on .tag{background:var(--accent); color:#fff}
+.verdict{padding:32px; display:flex; flex-direction:column; gap:16px}
+.verdict .m{font-size:40px; font-weight:300; line-height:1.1}
+.verdict .via{font-size:14px; color:var(--fg2)}
+.verdict .why{font-size:16px; color:var(--fg2); max-width:52ch}
+.verdict .ba{display:flex; gap:24px; align-items:flex-end; flex-wrap:wrap}
+.verdict .ba div{display:flex; flex-direction:column}
+.verdict .ba .k{font-size:12px; color:var(--fg3); letter-spacing:.32px}
+.verdict .ba .v{font-size:34px; font-weight:300; font-variant-numeric:tabular-nums}
+.verdict .ba .arrow{font-size:24px; color:var(--fg3); padding-bottom:6px}
+.verdict .ba .after{color:var(--accent-text)}
+@media (max-width:820px){.picker{grid-template-columns:1fr}.mistakes{border-right:0; border-bottom:1px solid var(--border)}}
+
+/* Results */
+.tabs{display:flex; border-bottom:1px solid var(--border); overflow-x:auto; margin-bottom:32px}
+.tab{all:unset; cursor:pointer; padding:12px 16px; font-size:14px; color:var(--fg2); border-bottom:2px solid transparent; white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--fg); border-bottom-color:var(--accent); font-weight:600}
+.res{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:48px; align-items:start}
+.chart h3{font-size:20px} .chart .metric{font-size:14px; color:var(--fg2); margin-top:4px}
+.bars{margin-top:24px; display:grid; gap:12px; position:relative}
+.bar-row{display:grid; grid-template-columns:minmax(120px, 200px) 1fr; gap:16px; align-items:center; position:relative}
+.bar-row .nm{font-size:13px; color:var(--fg2); line-height:1.3}
+.bar-row .nm small{display:block; color:var(--fg3); font-size:11.5px}
+.bar-track{position:relative; height:28px}
+.bar-grid{position:absolute; inset:0 0 0 calc(min(200px, 30%) + 16px); pointer-events:none}
+.bar-fill{height:100%; background:var(--muted-bar); width:0; transition:width 1s var(--ease-exp); border-radius:0 4px 4px 0; position:relative}
+.bar-row.hl .bar-fill{background:var(--accent)}
+.bar-row.ref .bar-fill{background:transparent; border:1.5px dashed var(--border-strong); border-left:0}
+.bar-val{position:absolute; top:50%; transform:translateY(-50%); left:calc(var(--w) + 8px); font-size:13px; font-variant-numeric:tabular-nums; color:var(--fg); transition:left 1s var(--ease-exp); white-space:nowrap}
+.bar-row:hover .nm{color:var(--fg)}
+.bar-row .tip{position:absolute; z-index:5; left:calc(min(200px,30%) + 16px); top:-36px; background:var(--inverse-bg); color:var(--inverse-fg); font-size:12px; padding:6px 10px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s}
+.bar-row:hover .tip, .bar-row:focus-within .tip{opacity:1}
+.axis{display:grid; grid-template-columns:minmax(120px,200px) 1fr; gap:16px; font-size:11px; color:var(--fg3); margin-top:8px}
+.axis div:last-child{display:flex; justify-content:space-between; width:86%}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--fg2); margin-top:16px}
+.legend span{display:flex; gap:6px; align-items:center}
+.legend i{width:12px; height:12px; display:inline-block}
+.res-side{display:grid; gap:16px}
+.kpi{border-top:1px solid var(--border); padding-top:12px}
+.kpi .v{font-size:36px; font-weight:300; font-variant-numeric:tabular-nums}
+.kpi p{font-size:14px; color:var(--fg2)}
+.fine{font-size:12px; color:var(--fg3); margin-top:24px; max-width:90ch}
+@media (max-width:980px){.res{grid-template-columns:1fr}}
+
+/* Compare table */
+.tbl-wrap{overflow-x:auto; border:1px solid var(--border)}
+table{border-collapse:collapse; width:100%; min-width:760px; font-size:14px}
+th,td{text-align:left; padding:14px 16px; vertical-align:top; border-bottom:1px solid var(--border)}
+thead th{background:var(--layer2); font-weight:600; font-size:14px; position:sticky; top:0}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--layer-hover)}
+td:first-child{font-weight:600; width:16%}
+td.dev{color:var(--fg2); width:24%}
+td.osai{width:32%}
+td.ev{color:var(--fg2); width:28%; font-size:13px}
+td .who{font:500 10.5px var(--f-mono); padding:2px 6px; margin-left:6px; vertical-align:2px; white-space:nowrap}
+.who.rh{background:color-mix(in srgb, var(--purple) 16%, transparent); color:var(--purple)}
+.who.oa{background:var(--accent-soft); color:var(--accent-text)}
+.tbl-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--fg2); margin-top:12px}
+
+/* Expect */
+.expect{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:1px; background:#393939; border:1px solid #393939}
+.ex{background:#161616; padding:24px; display:flex; flex-direction:column; gap:10px}
+.ex .h{display:flex; gap:10px; align-items:center; font-weight:600; font-size:16px; color:#f4f4f4}
+.ex p{font-size:14px; color:#c6c6c6}
+.ex .fix{font-size:13px; color:#78a9ff; margin-top:auto}
+.band.dark .sec-head p{color:#c6c6c6}
+.band.dark .eyebrow{color:#c6c6c6}
+.band.dark .eyebrow b{color:#f4f4f4}
+
+table.terms td:first-child{font-weight:400; color:var(--fg2); width:26%}
+table.terms td:nth-child(2){width:22%}
+table.terms td b{font-weight:600}
+#workflow{background:var(--bg)}
+#workflow :where(.diagram), #workflow :where(.code){background:var(--layer)}
+
+/* Prerequisites */
+.prereq{margin-bottom:48px}
+.prereq-h{margin-bottom:16px}
+.prereq-list{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border)}
+.prereq-list li{background:var(--layer); padding:20px; display:flex; flex-direction:column; gap:10px; min-width:0}
+.prereq-list b{font-weight:600; font-size:16px}
+.prereq-list p{font-size:14px; color:var(--fg2); margin-top:6px}
+.pn{font:500 12px var(--f-mono); color:var(--fg); border:1px solid var(--fg); width:max-content; padding:2px 8px}
+
+/* Get started */
+.nbs{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1px; background:var(--border); border:1px solid var(--border)}
+.nb{background:var(--bg); padding:24px; display:flex; flex-direction:column; gap:10px; min-height:220px; transition:background .15s; color:var(--fg); text-decoration:none!important; position:relative}
+.nb:hover{background:var(--layer-hover)}
+.nb .n{font:500 12px var(--f-mono); color:var(--fg3)}
+.nb h4{font-size:20px; font-weight:400}
+.nb p{font-size:14px; color:var(--fg2)}
+.nb .foot{margin-top:auto; display:flex; justify-content:space-between; align-items:center; font-size:12px}
+.status{font:500 11px var(--f-mono); padding:3px 8px; background:var(--warn-bg); color:var(--warn); letter-spacing:.3px}
+.nb .go{color:var(--accent-text); transition:transform .2s var(--ease)}
+.nb:hover .go{transform:translateX(4px)}
+@media (max-width:980px){.nbs{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.nbs{grid-template-columns:1fr}}
+.res-links{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0; margin-top:48px; border-top:1px solid var(--border)}
+.res-links a{padding:16px 16px 16px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:12px; font-size:15px; margin-right:24px}
+.res-links a span{color:var(--fg3); font-size:12px; display:block}
+
+footer{background:#161616; color:#c6c6c6; font-size:13px}
+footer .wrap{padding-block:40px; display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between}
+footer b{color:#f4f4f4; font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important}
+  .d-flow{stroke-dasharray:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+
+<header class="mast">
+  <div class="wrap">
+    <div class="brand"><b>Sentinel-7</b><span>· Fine-tuning and post-training on Red Hat OpenShift AI</span></div>
+    <nav aria-label="Sections">
+      <a href="#premise">Premise</a>
+      <a href="#value">Value</a>
+      <a href="#terms">Terms</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#methods">Methods</a>
+      <a href="#results">Results</a>
+      <a href="#compare">Compare</a>
+      <a href="#start">Get started</a>
+    </nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch colour theme"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4a12 12 0 1 0 0 24zm0-2a14 14 0 1 1 0 28 14 14 0 0 1 0-28z"/></svg><span id="theme-lbl">Dark</span></button>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="hero-grid-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow"><b>Red Hat OpenShift AI 3.5</b> · Fine-tuning and post-training</div>
+      <h1>Teach a small open model a specialist job. <em>Run it in production.</em></h1>
+      <p class="lede">Create training data, fine-tune with examples, post-train with rewards, then test and deploy, all in one secure OpenShift AI project. Built on the open-source tools your team already uses, with Red Hat support.</p>
+      <ul class="hero-steps">
+        <li><b>Create data</b><span>SDG Hub</span></li>
+        <li><b>Fine-tune</b><span>Training Hub · SFT</span></li>
+        <li><b>Post-train</b><span>Training Hub · GRPO</span></li>
+        <li><b>Deploy</b><span>vLLM · llama.cpp</span></li>
+      </ul>
+      <p style="margin-top:16px;font-size:14px;color:var(--fg2)">Built by <b style="color:var(--fg);font-weight:600">Nijesh Kanjinghat</b></p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#workflow">Walk through the workflow <svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.3 3.3 8.6 4l3.5 3.5H2v1h10.1L8.6 12l.7.7L14 8z"/></svg></a>
+        <a class="btn btn-ghost" href="https://github.com/knijesh/sentinel7-openshift-ai" target="_blank" rel="noopener">Get the notebooks <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 13H3V3h5V2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8h-1z"/><path d="M10 1v1h3.3L8.6 6.7l.7.7L14 2.7V6h1V1z"/></svg></a>
+      </div>
+    </div>
+
+    <div class="demo" aria-label="Example: operator note converted to a BD-SCR report">
+      <div class="demo-head"><span class="live"><span class="dot"></span>Edge Copilot · held-out note</span><span class="mono">granite-4.1-3b + LoRA</span></div>
+      <div class="demo-body">
+        <div class="lbl"><span>OPERATOR RADIO NOTE</span><span id="demo-step">input</span></div>
+        <div class="note note-wrap"><span class="ghost" aria-hidden="true">[S7-05 13DEC27] At 1246Z: E-305 on batt mod 3; pos 1.3516N 103.9895E; conf unk object brg 145 4nm, has AIS; spd 6; good vis; prob flotsam brg 320 5nm; battery at 37%; E-331 on battery module 2, SoC 14%; holding position.</span><span id="note">[S7-05 13DEC27] At 1246Z: E-305 on batt mod 3; pos 1.3516N 103.9895E; conf unk object brg 145 4nm, has AIS; spd 6; good vis; prob flotsam brg 320 5nm; battery at 37%; E-331 on battery module 2, SoC 14%; holding position.</span></div>
+        <div class="pipe-mini" aria-hidden="true"><span data-p="0">SDG data</span><i>›</i><span data-p="1">Training Hub</span><i>›</i><span data-p="2">vLLM</span><i>›</i><span data-p="3">llama.cpp edge</span></div>
+        <div class="lbl"><span>STRUCTURED JSON REPORT · ABRIDGED · ALL FIELDS EXACT</span><span>94-token prompt</span></div>
+<div class="json" id="json"><span class="ln">{ <span class="k">"report"</span>: <span class="s">"BD-SCR"</span>, <span class="k">"vessel"</span>: <span class="s">"S7-05"</span>, <span class="k">"dtg"</span>: <span class="s">"131246Z DEC 27"</span>,</span><span class="ln">  <span class="k">"mode"</span>: <span class="s">"holding"</span>, <span class="k">"position"</span>: { <span class="k">"lat"</span>: <span class="n">1.3516</span>, <span class="k">"lon"</span>: <span class="n">103.9895</span> },</span><span class="ln">  <span class="k">"speed_kts"</span>: <span class="n">6</span>, <span class="k">"battery_pct"</span>: <span class="n">37</span>, <span class="k">"visibility"</span>: <span class="s">"good"</span>,</span><span class="ln">  <span class="k">"contacts"</span>: [ { <span class="k">"type"</span>: <span class="s">"floating debris"</span>, <span class="k">"brg"</span>: <span class="n">320</span>, <span class="k">"confidence"</span>: <span class="s">"PROBABLE"</span> },</span><span class="ln">    { <span class="k">"type"</span>: <span class="s">"unidentified object"</span>, <span class="k">"brg"</span>: <span class="n">145</span>, <span class="k">"ais"</span>: <span class="n">true</span>, <span class="k">"confidence"</span>: <span class="s">"CONFIRMED"</span> } ],</span><span class="ln">  <span class="k">"faults"</span>: [ { <span class="k">"code"</span>: <span class="s">"E-305"</span>, <span class="k">"action"</span>: <span class="s">"Stop charging and run the balancing routine"</span> },</span><span class="ln">    { <span class="k">"code"</span>: <span class="s">"E-331"</span>, <span class="k">"reading"</span>: <span class="s">"14 %"</span>, <span class="k">"action"</span>: <span class="s">"Return to base at economy speed"</span> } ] }</span></div>
+      </div>
+      <div class="demo-foot">
+        <div><b>99.7%</b>exact reports</div>
+        <div><b>0.3%</b>invented fields</div>
+        <div><b>97%</b>on laptop CPU</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats" aria-label="Headline numbers">
+  <div class="wrap">
+    <div class="stat"><div class="big">6.3%<small>→</small>99.7%</div><p>Exact reports on 300 held-out notes, untuned vs tuned Granite 4.1-3B</p></div>
+    <div class="stat"><div class="big">16 min</div><p>LoRA training run on a share of one NVIDIA L4 GPU (about 10 GB)</p></div>
+    <div class="stat"><div class="big">62 MB</div><p>Adapter size. Small enough to send over a satellite link</p></div>
+    <div class="stat"><div class="big">2.1 GB</div><p>4-bit edge model, runs offline on a laptop CPU at 97% exact</p></div>
+  </div>
+</section>
+
+<!-- PREMISE -->
+<section class="band" id="premise">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>The premise</b> · fictional scenario, synthetic data</div>
+        <h2>A patrol vessel with no data centre on board.</h2>
+      </div>
+      <p>RAG works where you have a data centre. At sea you don't, so the model itself has to know the job.</p>
+    </div>
+
+    <div class="prem">
+      <div class="prem-cell">
+        <span class="ptag">The organisation</span>
+        <h3>Blue Defence</h3>
+        <p>A fictional Singapore defence company. Its <b>Sentinel-7</b> uncrewed surface vessels patrol the Singapore Strait, with watchkeepers on shore consoles.</p>
+      </div>
+      <div class="prem-cell">
+        <span class="ptag">The problem</span>
+        <h3>Messy notes, strict reports</h3>
+        <p>Operators send terse radio notes. The ops room needs each one turned into a strict JSON contact report (<b>BD-SCR</b>). No field invented, the operator's certainty kept, fault codes exactly as the vessel manual gives them.</p>
+        <code class="pnote">s7 0612z patrol 6kn hdg 270 batt 64 vis gd. poss small craft brg 040</code>
+      </div>
+      <div class="prem-cell">
+        <span class="ptag">The constraints</span>
+        <h3>Thin link, no GPU, sovereign data</h3>
+        <ul class="plist">
+          <li><span class="mono">LINK</span> A thin satellite link: ship a 62 MB adapter, not a new model</li>
+          <li><span class="mono">CPU</span> No GPU at sea: the model runs offline on a laptop</li>
+          <li><span class="mono">ACCESS</span> Notes, manuals, data and models stay inside one access-controlled project</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="journey-head"><span class="eyebrow"><b>One radio note, two jobs</b> · each solved with the method that fits its mistake</span></div>
+    <div class="journey" aria-label="Journey of one radio note: Edge Copilot with SFT, then SATCOM burst line with GRPO">
+      <div class="jn src"><span class="jk">INPUT</span><b>Radio note</b><span class="js">from the vessel or shore console</span></div>
+      <div class="jarrow" aria-hidden="true"><i></i></div>
+      <div class="jn"><span class="jk">01 · EDGE COPILOT</span><span class="meth">SFT</span><b>Note → exact JSON report</b><span class="js">LoRA fine-tuning · 6.3% → 99.7% exact</span></div>
+      <div class="jarrow" aria-hidden="true"><i></i></div>
+      <div class="jn"><span class="jk">02 · SATCOM BURST LINE</span><span class="meth">GRPO</span><b>Report → one satellite message, ≤ 160 characters, 7 checkable rules</b><span class="js">synthetic examples, then GRPO · 42.5% → 95% meet every rule</span></div>
+      <div class="jarrow" aria-hidden="true"><i></i></div>
+      <div class="jn dst"><span class="jk">ASHORE</span><b>Ops room and agents</b><span class="js">reports searched with RAG and acted on by AI agents</span></div>
+    </div>
+
+    <div class="show">
+      <div class="show-h eyebrow"><b>What we're showcasing</b></div>
+      <div class="show-grid">
+        <div><span class="sn">01</span><h4>A small open model can do a specialist job</h4><p>Granite 4.1-3B, tuned, beat 70B and 120B hosted models on exact reports, with a prompt 15× shorter.</p></div>
+        <div><span class="sn">02</span><h4>Each mistake has a method</h4><p>SFT teaches the report format. GRPO teaches rules a checker can verify. Both from one Training Hub API.</p></div>
+        <div><span class="sn">03</span><h4>One platform from data to edge</h4><p>Synthetic data, training, tracking and serving (SDG Hub, Training Hub, MLflow, vLLM, llama.cpp) in one OpenShift AI project, on a share of one GPU.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUE LAYERS -->
+<section class="band" id="value">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Why OpenShift AI</b> · three layers of value</div>
+        <h2>You keep TRL, Unsloth and transformers. You stop building the glue around them.</h2>
+      </div>
+      <p>Training Hub runs Unsloth, TRL and SentenceTransformers under the hood. The value sits on top: methods Red Hat built, one API across them, and a platform that runs, tracks, serves and governs the result.</p>
+    </div>
+    <div class="layers">
+      <div class="stack intro" id="stack">
+        <button class="layer" data-l="3" aria-pressed="false">
+          <span class="tier">L3</span>
+          <span><h3>OpenShift AI platform</h3><span class="sub">Runs, shares, tracks, serves and governs</span>
+            <span class="chips"><span class="chip">Workbenches</span><span class="chip">Kubeflow Trainer</span><span class="chip">Kueue</span><span class="chip">Hardware profiles</span><span class="chip">MLflow</span><span class="chip">AI Pipelines</span><span class="chip">KServe · llm-d</span><span class="chip">EvalHub</span><span class="chip">Project RBAC</span></span></span>
+        </button>
+        <button class="layer" data-l="2" aria-pressed="false">
+          <span class="tier">L2</span>
+          <span><h3>Red Hat AI additions</h3><span class="sub">Methods and tooling built by Red Hat AI Innovation</span>
+            <span class="chips"><span class="chip">Training Hub API</span><span class="chip">OSFT</span><span class="chip">SDG Hub flows</span><span class="chip">Memory estimator</span><span class="chip">GRPO tool-call rewards</span><span class="chip">GEPA</span><span class="chip">Curated package index</span></span></span>
+        </button>
+        <button class="layer" data-l="1" aria-pressed="false">
+          <span class="tier">L1</span>
+          <span><h3>Open-source engines</h3><span class="sub">The same libraries a dev team already knows</span>
+            <span class="chips"><span class="chip">PyTorch</span><span class="chip">transformers</span><span class="chip">PEFT</span><span class="chip">Unsloth</span><span class="chip">TRL</span><span class="chip">SentenceTransformers</span><span class="chip">vLLM</span><span class="chip">llama.cpp</span></span></span>
+        </button>
+      </div>
+      <div class="layer-detail" id="layer-detail" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TERMS -->
+<section class="band alt" id="terms">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>OpenShift AI in plain terms</b> · for teams that fine-tune with open source today</div>
+        <h2>You already know the work. Here is what OpenShift AI calls it.</h2>
+      </div>
+      <p>Each row starts from what a team does on its own GPU box today. The right column is the OpenShift AI name used in the rest of this page.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table class="terms">
+        <thead><tr><th>What you do today</th><th>On OpenShift AI</th><th>What it means for you</th></tr></thead>
+        <tbody>
+          <tr><td>A shared server, a shared login</td><td><b>Project</b></td><td>A separate space per team or use case, with its own users, data, GPUs and endpoints. Nothing leaves it unless you allow it.</td></tr>
+          <tr><td>Jupyter on a GPU box</td><td><b>Workbench</b></td><td>JupyterLab the platform runs for you, from a Red Hat image with Training Hub, PyTorch, TRL and MLflow already installed.</td></tr>
+          <tr><td><span class="mono">python train.py</span> or <span class="mono">torchrun</span></td><td><b>Training Hub</b> + <b>TrainJob</b></td><td>One Python call per method. Run it in the notebook, or hand the same call to Kubeflow Trainer, which runs it on cluster GPUs as a TrainJob.</td></tr>
+          <tr><td>"Which GPU can I use?"</td><td><b>Hardware profile</b></td><td>A named size (GPU type, memory, CPU) you pick from a menu. Several jobs can share one GPU.</td></tr>
+          <tr><td>Waiting in chat for a free GPU</td><td><b>Kueue</b></td><td>A queue that hands out GPUs fairly between teams and starts your job when capacity is free.</td></tr>
+          <tr><td>Weights &amp; Biases, a folder of checkpoints</td><td><b>MLflow</b></td><td>Experiment tracking and a model registry, built into the platform and scoped to your project.</td></tr>
+          <tr><td><span class="mono">vllm serve</span>, <span class="mono">llama-server</span></td><td><b>Model serving</b> (KServe)</td><td>A managed endpoint with TLS, login and autoscaling. vLLM and llama.cpp both run this way.</td></tr>
+          <tr><td>Bash scripts and cron</td><td><b>AI Pipelines</b></td><td>Repeatable, logged runs (Kubeflow Pipelines) started from the dashboard, such as "evaluate, then promote the winner".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW -->
+<section class="band alt" id="workflow">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Workflow</b> · seven steps, one project</div>
+        <h2>Click through what we built, and what each step would take on your own.</h2>
+      </div>
+      <p>Each step shows the dev-environment way, the OpenShift AI way, the evidence from our runs and the code. Use the arrow keys to move between steps.</p>
+    </div>
+    <div class="stepper" id="stepper" role="tablist" aria-label="Workflow steps"></div>
+    <div class="panel" id="panel" role="tabpanel"></div>
+    <div class="panel-nav">
+      <button id="prev" type="button"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.7 3.3 7.4 4 3.9 7.5H14v1H3.9L7.4 12l-.7.7L2 8z"/></svg><span>Previous</span></button>
+      <button id="next" type="button"><span>Next step</span><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M9.3 3.3 8.6 4l3.5 3.5H2v1h10.1L8.6 12l.7.7L14 8z"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- METHODS -->
+<section class="band" id="methods">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Method choice</b> · one API, pick by the mistake</div>
+        <h2>Start from the mistake the model makes. The method follows.</h2>
+      </div>
+      <p>With Training Hub, switching method means changing one function name, not the stack. Choose a mistake to see the method that fixed it in our runs.</p>
+    </div>
+    <div class="picker">
+      <div class="mistakes" id="mistakes"></div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="band alt" id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Results</b> · held-out sets, one scorer per task</div>
+        <h2>A tuned 3B model beat models twenty to forty times its size on the job it was trained for.</h2>
+      </div>
+      <p>Every number comes from data the models never trained on, scored by the same scorer for every model. Runs that did not help are logged in MLflow next to the ones that did.</p>
+    </div>
+    <div class="tabs" id="res-tabs" role="tablist"></div>
+    <div class="res" id="res"></div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="band" id="compare">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Side by side</b> · dev environment vs OpenShift AI</div>
+        <h2>What a team builds on its own, and what the platform gives it.</h2>
+      </div>
+      <p>Tags show where the value comes from: methods and tooling from Red Hat AI, or the OpenShift AI platform.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Need</th><th>Dev environment<br><span style="font-weight:400;color:var(--fg3)">TRL · Unsloth · transformers</span></th><th>Red Hat OpenShift AI</th><th>Our evidence</th></tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+    </div>
+    <div class="tbl-legend"><span><span class="who rh" style="font:500 10.5px var(--f-mono);padding:2px 6px">RED HAT AI</span> method or tooling Red Hat built on open source</span><span><span class="who oa" style="font:500 10.5px var(--f-mono);padding:2px 6px">PLATFORM</span> OpenShift AI capability</span></div>
+  </div>
+</section>
+
+<!-- START -->
+<section class="band" id="start">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow"><b>Get started</b> · run it on your OpenShift AI</div>
+        <h2>Six notebooks, one per stage of the workflow.</h2>
+      </div>
+      <p>Each notebook runs in an OpenShift AI workbench with the Training Hub image, using plain library calls: SDG Hub, Training Hub, the Kubeflow SDK, MLflow and KFP. <a href="https://github.com/knijesh/sentinel7-openshift-ai" target="_blank" rel="noopener">Open the repository ↗</a></p>
+    </div>
+    <div class="prereq">
+      <div class="prereq-h"><span class="eyebrow"><b>Prerequisites</b> · set up once per project</span></div>
+      <ol class="prereq-list">
+        <li><span class="pn">01</span><div><b>Project access</b><p>The cluster admin grants the <span class="mono">training-edit</span> role in your project, so notebooks can start training jobs on the cluster.</p></div></li>
+        <li><span class="pn">02</span><div><b>A GPU size to pick</b><p>A hardware profile for your GPU. About 10 GB of GPU memory (a share of one NVIDIA L4) is enough for LoRA on Granite 4.1-3B.</p></div></li>
+        <li><span class="pn">03</span><div><b>Training Hub workbench image</b><p>Training Hub, the Kubeflow SDK, MLflow and TRL come preinstalled. Choose it when you create the workbench.</p></div></li>
+        <li><span class="pn">04</span><div><b>Project storage</b><p>One volume for models, data and checkpoints, shared by the workbench and the training jobs.</p></div></li>
+        <li><span class="pn">05</span><div><b>MLflow and pipelines</b><p>Turn on MLflow tracking for the project, and add a pipeline server so you can run the promotion pipeline.</p></div></li>
+      </ol>
+    </div>
+    <div class="nbs" id="nbs"></div>
+    <div class="res-links">
+      <a href="https://knijesh.github.io/sentinel7-openshift-ai/console/" target="_blank" rel="noopener"><div>Demo app: Sentinel-7 Ops Console<span>Five models side by side, real recorded answers · live instance: contact Nijesh Kanjinghat</span></div>↗</a>
+      <a href="https://github.com/Red-Hat-AI-Innovation-Team/training_hub"><div>Training Hub<span>Red Hat AI Innovation · GitHub</span></div>↗</a>
+      <a href="https://github.com/Red-Hat-AI-Innovation-Team/sdg_hub"><div>SDG Hub<span>Red Hat AI Innovation · GitHub</span></div>↗</a>
+      <a href="https://github.com/red-hat-data-services/red-hat-ai-examples/tree/main/examples/fine-tuning"><div>Red Hat AI fine-tuning examples<span>Notebooks and TrainJob examples · GitHub</span></div>↗</a>
+      <a href="https://developers.redhat.com/articles/2026/07/28/osft-explained-prevent-catastrophic-forgetting-llm-fine-tuning"><div>OSFT explained<span>Red Hat Developer · Jul 2026</span></div>↗</a>
+      <a href="https://developers.redhat.com/articles/2026/03/26/scale-llm-fine-tuning-training-hub-and-openshift-ai"><div>Scale fine-tuning with Training Hub<span>Red Hat Developer · Mar 2026</span></div>↗</a>
+      <a href="https://developers.redhat.com/articles/2026/08/26/reinforcement-learning-from-verifiable-rewards-with-training-hub-on-red-hat-openshift-ai"><div>GRPO with verifiable rewards<span>Red Hat Developer · Aug 2026</span></div>↗</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div><b>Sentinel-7 on OpenShift AI</b> · Red Hat OpenShift AI 3.5 · Training Hub 0.9.2 · SDG Hub 0.9.4 · IBM Granite 4.1</div>
+    <div>Built by <b>Nijesh Kanjinghat</b></div>
+    <div>Blue Defence and Sentinel-7 are a fictional scenario. All data is synthetic.</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Theme toggle: light / dark ---------- */
+const root = document.documentElement, sysDark = matchMedia('(prefers-color-scheme: dark)');
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : sysDark.matches;
+function paintThemeBtn(){ $('#theme-lbl').textContent = isDark() ? 'Light mode' : 'Dark mode'; }
+try{ const saved = localStorage.getItem('s7-theme'); if(saved==='dark'||saved==='light') root.dataset.theme = saved; }catch(e){}
+paintThemeBtn();
+$('#theme-btn').addEventListener('click', ()=>{
+  const next = isDark() ? 'light' : 'dark'; root.dataset.theme = next;
+  try{ localStorage.setItem('s7-theme', next); }catch(e){}
+  paintThemeBtn();
+});
+sysDark.addEventListener && sysDark.addEventListener('change', paintThemeBtn);
+const ICON = {
+  check:'<svg width="16" height="16" viewBox="0 0 32 32" fill="var(--good)"><path d="M16 2a14 14 0 1 0 14 14A14 14 0 0 0 16 2zm-2 19.6-5-5L10.6 15l3.4 3.4 7.4-7.4L23 12.6z"/></svg>',
+  minus:'<svg width="16" height="16" viewBox="0 0 32 32" fill="var(--fg3)"><path d="M16 2a14 14 0 1 0 14 14A14 14 0 0 0 16 2zm7 15H9v-2h14z"/></svg>',
+  arrow:'<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M9.3 3.3 8.6 4l3.5 3.5H2v1h10.1L8.6 12l.7.7L14 8z"/></svg>'
+};
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function hl(code, lang){
+  let h = esc(code);
+  if(lang==='yaml'){
+    h = h.replace(/(#.*)$/gm,'<span class="c">$1</span>').replace(/^(\s*-?\s*)([\w_]+):/gm,'$1<span class="k">$2</span>:');
+  } else {
+    h = h.replace(/(&quot;|"[^"\n]*")/g,'<span class="s">$1</span>')
+         .replace(/(#[^\n]*)/g,'<span class="c">$1</span>')
+         .replace(/\b(from|import|def|return|for|in|if|and|True|False|None)\b/g,'<span class="k">$1</span>');
+  }
+  return h;
+}
+
+/* ---------- Hero demo ---------- */
+const NOTE = $('#note').textContent;
+const pipes = $$('.pipe-mini span');
+let demoTimer;
+function runDemo(){
+  if(reduce) return;
+  const note = $('#note'), json = $('#json'), lines = $$('.ln', json), step = $('#demo-step');
+  let i = 0; note.innerHTML = ''; json.classList.add('run'); lines.forEach(l=>l.classList.remove('show','flash'));
+  pipes.forEach(p=>p.classList.remove('on')); step.textContent = 'operator typing';
+  const type = setInterval(()=>{
+    i += 3; note.innerHTML = esc(NOTE.slice(0,i)) + '<span class="caret"></span>';
+    if(i >= NOTE.length){ clearInterval(type); note.textContent = NOTE; step.textContent = 'tuned model';
+      pipes.forEach((p,k)=>setTimeout(()=>p.classList.add('on'), k*260));
+      lines.forEach((l,k)=>setTimeout(()=>{ l.classList.add('show','flash'); setTimeout(()=>l.classList.remove('flash'),500); }, 1100 + k*230));
+      setTimeout(()=>{ step.textContent = 'exact'; }, 1100 + lines.length*230);
+      demoTimer = setTimeout(runDemo, 9000);
+    }
+  }, 28);
+}
+setTimeout(runDemo, 900);
+
+/* ---------- Layers ---------- */
+const LAYERS = {
+  "3": {title:"OpenShift AI platform", lead:"Turns a training script into an operated service.", items:[
+    "Workbenches: managed JupyterLab from the same Red Hat image the training jobs use",
+    "Kubeflow Trainer: the notebook's training call runs as a cluster job, on one GPU or many",
+    "GPU sharing: pick a GPU size from a menu (hardware profiles); a fair queue across teams (Kueue)",
+    "MLflow: experiment tracking and a model registry, scoped to the project",
+    "AI Pipelines: repeatable runs such as evaluate, compare, promote, recorded every time",
+    "Model serving (KServe, llm-d): managed vLLM endpoints with several LoRA adapters, plus engines you add, such as llama.cpp",
+    "EvalHub: risk and compliance evaluation before deployment, generally available in 3.5",
+    "Projects: separate spaces with their own access control; data, models and endpoints stay inside"],
+    dev:"Stand up and secure each of these yourself, then keep them working together."},
+  "2": {title:"Red Hat AI additions", lead:"Methods and tooling Red Hat built on top of the open-source engines.", items:[
+    "Training Hub: one Python function per method (sft, osft, lora_sft, lora_grpo, embedding_sft, gepa)",
+    "OSFT: full fine-tuning that protects what the model already knows; one setting, unfreeze_rank_ratio",
+    "SDG Hub: synthetic data pipelines written as YAML from reusable blocks, any teacher model",
+    "Memory estimator: GPU memory per method before you book a GPU",
+    "GRPO for tool calls: ready-made rewards, multi-turn traces split per turn",
+    "GEPA: try prompt optimisation before fine-tuning, CPU only",
+    "Red Hat's vetted Python package index: tested, compatible versions behind the training image"],
+    dev:"Write your own training loops, data scripts, reward plumbing and version pins."},
+  "1": {title:"Open-source engines", lead:"Nothing proprietary underneath. Your team's skills carry over.", items:[
+    "Unsloth + PEFT + transformers power Training Hub's LoRA path",
+    "TRL ships in the same image; we used it for DPO",
+    "SentenceTransformers powers embedding fine-tuning",
+    "vLLM serves on GPU; llama.cpp runs the 4-bit edge model on CPU",
+    "Adapters and GGUF files are standard formats; they run anywhere these engines run"],
+    dev:"Same libraries. The difference is everything around them."}
+};
+function showLayer(k){
+  $$('.layer').forEach(b=>{ const on=b.dataset.l===k; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); });
+  const L = LAYERS[k], d = $('#layer-detail');
+  d.innerHTML = `<div class="eyebrow"><b>L${k}</b> · ${L.lead}</div><h3 style="margin-top:12px">${L.title}</h3>
+    <div class="k">What you get</div><ul>${L.items.map(i=>`<li>${ICON.check}<span>${i}</span></li>`).join('')}</ul>
+    <div class="k">In a dev environment</div><ul><li>${ICON.minus}<span style="color:var(--fg2)">${L.dev}</span></li></ul>`;
+  d.classList.remove('fade-swap'); void d.offsetWidth; d.classList.add('fade-swap');
+}
+$$('.layer').forEach(b=>b.addEventListener('click',()=>showLayer(b.dataset.l)));
+showLayer("2");
+
+/* ---------- Diagrams ---------- */
+const box = (x,y,w,h,cls,t1,t2,tcls='') => `<rect class="d-box ${cls}" x="${x}" y="${y}" width="${w}" height="${h}"/>`+
+  `<text class="d-t b ${tcls}" x="${x+10}" y="${y+(t2?20:h/2+4)}">${t1}</text>`+(t2?`<text class="d-t s ${tcls}" x="${x+10}" y="${y+36}">${t2}</text>`:'');
+const DEFS = id => `<defs><marker id="ah-${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-ah" d="M0 0L10 5L0 10z"/></marker><marker id="ahx-${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-ah alt" d="M0 0L10 5L0 10z"/></marker></defs>`;
+const AR = (id, d, alt) => `<path class="d-arrow${alt?' alt':''}" d="${d}" marker-end="url(#${alt?'ahx':'ah'}-${id})"/>`;
+const LN = d => `<path class="d-arrow" d="${d}"/>`;
+const DOT = (path, dur, begin=0, cls='') => `<circle class="d-dot ${cls}" r="4.5"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${path}"/></circle>`;
+const DIAG = {
+sdg: `<svg viewBox="0 0 520 290" role="img" aria-label="SDG Hub flow for burst lines: 400 seed reports go through prompt builder, LLM chat block calling a teacher model served in the project, extractor and filter; 173 pass into the training set, 227 are dropped">
+  ${DEFS('sdg')}
+  <rect class="d-box" x="125" y="10" width="388" height="96" style="stroke-dasharray:5 4"/>
+  <text class="d-t s" x="135" y="28">SDG HUB FLOW · flow.yaml · blocks run in order</text>
+  ${box(10,41,95,50,'', 'Seed data','400 reports')}
+  ${box(135,40,88,48,'purple','PromptBuilder','fill template')}
+  ${box(237,40,78,48,'purple','LLMChat','generate')}
+  ${box(329,40,80,48,'purple','Extractor','parse answer')}
+  ${box(423,40,80,48,'teal','Filter','judge or rules')}
+  ${AR('sdg','M105 66H133')}${AR('sdg','M223 64H235')}${AR('sdg','M315 64H327')}${AR('sdg','M409 64H421')}
+  ${box(170,150,125,48,'acc','Teacher model','vLLM in project')}
+  ${AR('sdg','M262 88V148')}${AR('sdg','M290 150V90')}<text class="d-lbl" x="196" y="128">prompt</text><text class="d-lbl" x="296" y="128">answer</text>
+  ${box(330,175,180,50,'fill','Training set','173 burst lines kept','w')}
+  ${box(330,240,180,40,'bad','Dropped','227 broke a rule')}
+  ${AR('sdg','M470 88V173')}<text class="d-lbl" x="476" y="140">pass</text>
+  ${AR('sdg','M440 88V140H320V260H328')}<text class="d-lbl" x="400" y="134">fail</text>
+  <text class="d-t m" x="10" y="232">data and teacher stay</text><text class="d-t m" x="10" y="248">inside the project</text>
+  ${DOT('M58 66H470V173',3.4)}${DOT('M58 66H470V173',3.4,1.1)}${DOT('M58 66H440V140H320V260H330',3.4,2.2,'r')}
+</svg>`,
+train: `<svg viewBox="0 0 520 270" role="img" aria-label="Notebook submits a TrainJob, Kueue queues it onto a GPU slice, the job writes a LoRA adapter">
+  ${DEFS('tr')}
+  ${box(10,20,120,56,'', 'Notebook','lora_sft(**params)')}
+  ${box(165,20,145,56,'acc','TrainJob','cluster training job')}
+  ${box(345,20,130,56,'purple','Queue (Kueue)','fair share of GPUs')}
+  ${box(165,125,145,70,'soft','GPU share','size picked from menu')}
+  ${box(345,125,130,70,'fill','LoRA adapter','62 MB · rank 16','w')}
+  ${AR('tr','M130 48H163')}${AR('tr','M310 48H343')}${AR('tr','M410 76V100H237V123')}${AR('tr','M310 160H343')}
+  <rect x="177" y="170" width="14" height="14" class="d-box fill d-pulse"/><rect x="197" y="170" width="14" height="14" class="d-box fill d-pulse" style="animation-delay:.4s"/><rect x="217" y="170" width="14" height="14" class="d-box fill d-pulse" style="animation-delay:.8s"/>
+  <text class="d-t s" x="10" y="128">train loss</text>
+  ${LN('M10 240H140M10 136V240')}
+  <path class="d-draw" style="stroke:var(--anim);stroke-width:2;fill:none" d="M12 144C30 195 40 214 60 224S110 232 138 234"/>
+  <text class="d-t m" x="165" y="228">same code: notebook → workbench → TrainJob</text>
+  <text class="d-t m" x="165" y="246">528 steps · 16.1 min · tracked live in MLflow</text>
+  ${DOT('M70 48H237V48H410V100H237V160H410',4)}
+</svg>`,
+align: `<svg viewBox="0 0 480 270" role="img" aria-label="GRPO loop: policy samples eight answers, rule checker scores them, LoRA update moves the policy toward the better answers">
+  ${DEFS('al')}
+  ${box(180,14,120,48,'acc','Policy','Granite 3B + LoRA')}
+  ${box(340,106,130,48,'','8 samples','per report')}
+  ${box(180,200,120,48,'teal','Rule checker','B1–B7 · reward 0–1')}
+  ${box(10,106,130,48,'fill','LoRA update','toward better answers','w')}
+  ${AR('al','M300 38Q405 38 405 104')}${AR('al','M405 154Q405 224 302 224')}${AR('al','M180 224Q75 224 75 156')}${AR('al','M75 106Q75 38 178 38')}
+  <text class="d-lbl" x="360" y="62">sample</text><text class="d-lbl" x="372" y="204">score</text><text class="d-lbl" x="62" y="204">update</text><text class="d-lbl" x="70" y="62">next iteration</text>
+  <text class="d-t b" x="216" y="128">GRPO</text><text class="d-t s" x="178" y="146">8 samples × 16 reports</text>
+  ${DOT('M300 38Q405 38 405 106L405 154Q405 224 300 224L180 224Q75 224 75 154L75 106Q75 38 180 38Z',5)}
+  ${DOT('M300 38Q405 38 405 106L405 154Q405 224 300 224L180 224Q75 224 75 154L75 106Q75 38 180 38Z',5,2.5)}
+</svg>`,
+track: `<svg viewBox="0 0 480 270" role="img" aria-label="MLflow runs are registered as model versions; the champion alias moves to the winning version">
+  ${DEFS('tk')}
+  <text class="d-t s" x="10" y="16">MLFLOW RUNS · PROJECT-SCOPED</text>
+  ${['lora-v1-bf16','lora-dpo-balanced','lora-v2-radio-data'].map((n,i)=>`<rect class="d-box" x="10" y="${24+i*32}" width="200" height="26"/><text class="d-t m" x="18" y="${41+i*32}">${n}</text><path class="d-draw" style="stroke:var(--anim);stroke-width:1.5;fill:none;animation-delay:${i*.4}s" d="M150 ${44+i*32}C160 ${30+i*32} 170 ${41+i*32} 202 ${38+i*32}"/>`).join('')}
+  ${AR('tk','M110 114V154')}<text class="d-lbl" x="118" y="138">register</text>
+  <text class="d-t s" x="250" y="40">promote = move an alias</text><text class="d-t s" x="250" y="58">serving reads the alias</text>
+  ${[['v1','SFT','92.7%'],['v2','v1 + DPO','99.7%'],['v3','SFT v2','99.7–100%'],['v4','edge GGUF','97%']].map((v,i)=>`<rect class="d-box ${i===2?'acc':''}" x="${10+i*116}" y="158" width="106" height="56"/><text class="d-t b" x="${20+i*116}" y="178">${v[0]} · ${v[1]}</text><text class="d-t s" x="${20+i*116}" y="196">exact ${v[2]}</text>`).join('')}
+  <g class="d-alias"><rect x="10" y="226" width="106" height="24" class="d-box fill"/><text class="d-t w b" x="22" y="242">@champion</text></g>
+</svg>`,
+serve: `<svg viewBox="0 0 480 270" role="img" aria-label="Ops console calls one vLLM endpoint serving the base model and three adapters, and a llama.cpp edge twin on CPU that uses the same file as the offline laptop">
+  ${DEFS('sv')}
+  ${box(10,20,110,48,'', 'Ops console','5 models')}
+  <rect class="d-box acc" x="160" y="10" width="190" height="130"/>
+  <text class="d-t b" x="172" y="30">vLLM · one endpoint</text><text class="d-t s" x="172" y="46">managed by KServe · GPU share</text>
+  ${['base','edgecopilot-v1','edgecopilot-dpo','edgecopilot-v2'].map((n,i)=>`<rect class="d-box ${i?'soft':''}" x="172" y="${56+i*20}" width="166" height="16"/><text class="d-t m" x="180" y="${68+i*20}">${n}</text>`).join('')}
+  <rect class="d-box teal" x="160" y="170" width="190" height="78"/>
+  <text class="d-t b" x="172" y="190">llama.cpp · edge twin</text><text class="d-t s" x="172" y="206">custom serving runtime · CPU</text><text class="d-t m" x="172" y="226">GGUF Q4_K_M · 2.1 GB</text>
+  ${box(380,170,90,78,'fill','Laptop','same GGUF','w')}
+  ${AR('sv','M120 44H158')}${AR('sv','M65 68V209H158')}${AR('sv','M350 209H378')}
+  ${AR('sv','M474 90H352')}<text class="d-lbl" x="362" y="66">adapter update</text><text class="d-lbl" x="362" y="80">62 MB</text>
+  <text class="d-t s" x="388" y="262">offline · Wi-Fi off</text>
+  ${DOT('M120 44H160',1.4)}${DOT('M65 68V209H160',2.2,.4)}${DOT('M350 209H380',1.4,.8)}
+</svg>`,
+gate: `<svg viewBox="0 0 480 270" role="img" aria-label="Pipeline: load held-out notes, evaluate champion and challenger, quality gate, then keep the champion or promote the challenger">
+  ${DEFS('gt')}
+  ${box(10,105,100,50,'', 'Load notes','50 held-out')}
+  ${box(150,40,120,50,'acc','Evaluate','champion · v2')}
+  ${box(150,170,120,50,'purple','Evaluate','challenger · DPO')}
+  <polygon class="d-box teal" points="330,130 375,95 420,130 375,165"/><text class="d-t b" x="358" y="134">Gate</text>
+  ${box(370,14,100,44,'', 'Promote','move alias')}
+  ${box(370,206,100,44,'fill','Keep champion','logged to MLflow','w')}
+  ${LN('M110 130H130')}${AR('gt','M130 130V65H148')}${AR('gt','M130 130V195H148')}
+  ${LN('M270 65H300V130')}${LN('M270 195H300V130')}${AR('gt','M300 130H328')}
+  ${AR('gt','M375 95V60',true)}<text class="d-lbl" x="382" y="82">if challenger wins</text>
+  ${AR('gt','M375 165V204')}<text class="d-lbl" x="382" y="188">100 vs 100</text>
+  ${DOT('M60 130H130V65H300V130H375V206',3.4)}${DOT('M60 130H130V195H300V130H375V206',3.4,1.7)}
+</svg>`
+};
+const DIAG_OLD = {
+sdg: `<svg viewBox="0 0 480 270" role="img" aria-label="SDG Hub flow: seed rows, prompt builder, teacher model, extractor, checker, dataset">
+  ${box(10,20,100,50,'', 'Seed rows','chunks + glossary')}
+  ${box(130,20,100,50,'purple','PromptBuilder','block · YAML')}
+  ${box(250,20,110,50,'acc','Teacher LLM','served in project')}
+  ${box(380,20,90,50,'purple','Extractor','block · YAML')}
+  ${box(380,130,90,56,'teal','Checker','rules filter')}
+  ${box(170,130,150,56,'fill','Training set','935 queries · 173 bursts','w')}
+  <path class="d-flow" d="M110 45H130"/><path class="d-flow" d="M230 45H250"/><path class="d-flow" d="M360 45H380"/>
+  <path class="d-flow" d="M425 70V130"/><path class="d-flow" d="M380 158H320"/>
+  <path class="d-line" d="M425 186V226H60" stroke-dasharray="3 4"/><text class="d-t s" x="64" y="244">227 of 400 teacher bursts rejected (mostly dropped contacts)</text>
+  <circle class="d-dot" r="4"><animateMotion dur="3.2s" repeatCount="indefinite" path="M60 45H305H425V158H245"/></circle>
+  <circle class="d-dot p" r="4"><animateMotion dur="3.2s" begin="1.1s" repeatCount="indefinite" path="M60 45H305H425V158H245"/></circle>
+  <circle class="d-dot r" r="4"><animateMotion dur="3.2s" begin="2.1s" repeatCount="indefinite" path="M60 45H305H425V206H425V226H60"/></circle>
+  <text class="d-t m" x="10" y="100">no data leaves the project · same flow re-runs for new domains</text>
+</svg>`,
+train: `<svg viewBox="0 0 480 270" role="img" aria-label="Notebook submits a TrainJob, Kueue queues it, GPU pod trains, adapter saved and tracked">
+  ${box(10,20,120,56,'', 'Notebook','lora_sft(**params)')}
+  ${box(170,20,140,56,'acc','TrainJob','runtime: training-hub')}
+  ${box(350,20,120,56,'purple','Kueue','queue · fair share')}
+  ${box(170,120,140,64,'soft','GPU slice','hardware profile · L4')}
+  ${box(350,120,120,64,'fill','Adapter','62 MB · rank 16','w')}
+  <path class="d-flow" d="M130 48H170"/><path class="d-flow" d="M310 48H350"/><path class="d-flow" d="M410 76V100H240V120"/><path class="d-flow" d="M310 152H350"/>
+  <rect x="186" y="160" width="14" height="14" class="d-box fill d-pulse"/><rect x="206" y="160" width="14" height="14" class="d-box fill d-pulse" style="animation-delay:.4s"/><rect x="226" y="160" width="14" height="14" class="d-box fill d-pulse" style="animation-delay:.8s"/>
+  <text class="d-t s" x="10" y="140">train loss</text>
+  <path class="d-line" d="M10 240H150M10 150V240"/>
+  <path class="d-draw" style="stroke:var(--anim);stroke-width:2;fill:none" d="M12 158C30 205 40 222 60 230S110 236 148 237"/>
+  <text class="d-t m" x="170" y="222">same code: notebook → workbench → TrainJob → pipeline</text>
+  <text class="d-t m" x="170" y="240">528 steps · 16.1 min · tracked live in MLflow</text>
+</svg>`,
+align: `<svg viewBox="0 0 480 270" role="img" aria-label="GRPO loop: policy samples eight answers, a checker scores them, LoRA update moves toward better ones">
+  <circle cx="240" cy="130" r="92" class="d-line" stroke-dasharray="4 6"/>
+  <g class="d-spin"><circle cx="240" cy="38" r="5" class="d-dot"/><circle cx="332" cy="130" r="5" class="d-dot p"/><circle cx="240" cy="222" r="5" class="d-dot t"/></g>
+  ${box(180,14,120,48,'acc','Policy','Granite 3B + LoRA')}
+  ${box(340,106,130,48,'','8 samples','per report')}
+  ${box(180,200,120,48,'teal','Rule checker','B1–B7 · reward 0–1')}
+  ${box(10,106,130,48,'fill','LoRA update','toward better answers','w')}
+  ${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${352+i*14}" y="160" width="10" height="10" class="d-box ${i%3===0?'fill':'soft'}"/>`).join('')}
+  <text class="d-t m" x="200" y="128">GRPO</text><text class="d-t s" x="186" y="144">8 samples × 16 reports</text>
+</svg>`,
+track: `<svg viewBox="0 0 480 270" role="img" aria-label="MLflow runs feed the model registry; the champion alias moves to the winning version">
+  <text class="d-t s" x="10" y="18">MLFLOW RUNS · PROJECT-SCOPED</text>
+  ${['lora-v1-bf16','lora-dpo-balanced','lora-v2-radio-data'].map((n,i)=>`<rect class="d-box" x="10" y="${28+i*34}" width="200" height="28"/><text class="d-t m" x="18" y="${46+i*34}">${n}</text><path class="d-draw" style="stroke:var(--anim);stroke-width:1.5;fill:none;animation-delay:${i*.4}s" d="M150 ${50+i*34}C160 ${36+i*34} 170 ${47+i*34} 200 ${44+i*34}"/>`).join('')}
+  <text class="d-t s" x="10" y="150">MODEL REGISTRY · sentinel7-edge-copilot</text>
+  ${[['v1','SFT','92.7%'],['v2','v1 + DPO','99.7%'],['v3','SFT v2','99.7–100%'],['v4','edge GGUF','97%']].map((v,i)=>`<rect class="d-box ${i===2?'acc':''}" x="${10+i*116}" y="162" width="106" height="56"/><text class="d-t b" x="${20+i*116}" y="182">${v[0]} · ${v[1]}</text><text class="d-t s" x="${20+i*116}" y="200">exact ${v[2]}</text>`).join('')}
+  <g class="d-alias"><rect x="10" y="226" width="106" height="22" class="d-box fill"/><text class="d-t w b" x="22" y="241">@champion</text></g>
+  <text class="d-t m" x="250" y="46">promote = move an alias</text><text class="d-t m" x="250" y="64">serving reads the alias</text>
+</svg>`,
+serve: `<svg viewBox="0 0 480 270" role="img" aria-label="One vLLM endpoint serves base model and three adapters; llama.cpp edge twin on CPU with the same file as the laptop">
+  ${box(10,20,110,48,'', 'Ops console','5 models')}
+  <rect class="d-box acc" x="160" y="10" width="190" height="130"/>
+  <text class="d-t b" x="172" y="30">vLLM · one endpoint</text><text class="d-t s" x="172" y="46">managed by KServe · GPU share</text>
+  ${['base','edgecopilot-v1','edgecopilot-dpo','edgecopilot-v2'].map((n,i)=>`<rect class="d-box ${i?'soft':''}" x="172" y="${56+i*20}" width="166" height="16"/><text class="d-t m" x="180" y="${68+i*20}">${n}</text>`).join('')}
+  <rect class="d-box teal" x="160" y="170" width="190" height="78"/>
+  <text class="d-t b" x="172" y="190">llama.cpp · edge twin</text><text class="d-t s" x="172" y="206">custom serving runtime · CPU</text><text class="d-t m" x="172" y="226">GGUF Q4_K_M · 2.1 GB</text>
+  ${box(380,170,90,78,'fill','Laptop','offline · Wi-Fi off','w')}
+  <path class="d-flow" d="M120 44H160"/><path class="d-flow slow" d="M65 68V209H160"/><path class="d-flow slow" d="M350 209H380"/>
+  <text class="d-t m" x="364" y="40">adapter update</text><text class="d-t m" x="364" y="56">= 62 MB</text>
+  <text class="d-t m" x="364" y="160">same file</text>
+  <circle class="d-dot" r="4"><animateMotion dur="1.6s" repeatCount="indefinite" path="M120 44H230V90"/></circle>
+</svg>`,
+gate: `<svg viewBox="0 0 480 270" role="img" aria-label="Pipeline: load notes, evaluate champion and challenger, quality gate, promote or keep">
+  ${box(10,105,100,50,'', 'Load notes','50 held-out')}
+  ${box(150,40,120,50,'acc','Evaluate','champion · v2')}
+  ${box(150,170,120,50,'purple','Evaluate','challenger · DPO')}
+  <polygon class="d-box teal" points="340,130 380,95 420,130 380,165"/><text class="d-t b" x="358" y="134">Gate</text>
+  ${box(370,20,100,44,'', 'Promote','move alias')}
+  ${box(370,196,100,44,'fill','Keep champion','logged to MLflow','w')}
+  <path class="d-flow" d="M110 130H130V65H150"/><path class="d-flow" d="M130 130V195H150"/><path class="d-flow" d="M270 65H310V130H340"/><path class="d-flow" d="M270 195H310V130"/>
+  <path class="d-line" d="M380 95V64" stroke-dasharray="3 4"/><path class="d-flow" d="M380 165V196"/>
+  <text class="d-t m" x="10" y="250">exact % · invented field · latency → 100 vs 100 → kept v2</text>
+</svg>`
+};
+
+/* ---------- Memory estimator (step 2 visual) ---------- */
+const MEM = [["SFT",56,73,"full weights"],["OSFT",43,55,"full, protected"],["LoRA",7.2,9.1,"adapter, bf16"],["QLoRA",3.0,4.1,"adapter, 4-bit"]];
+const GPUS = [["L4 share",10],["L4",24],["L40S",48],["H100",80]];
+const MAXG = 90;
+function memHTML(){
+  return `<div class="mem" id="mem"><div class="cap" style="font-size:12px;letter-spacing:.32px;color:var(--fg3);display:flex;justify-content:space-between"><span>TRAINING HUB MEMORY ESTIMATOR · GRANITE 4.1-3B · 1 GPU</span><span>GiB</span></div>
+  <div class="gpu-pick" role="group" aria-label="GPU memory">${GPUS.map((g,i)=>`<button type="button" data-g="${g[1]}" class="${i===0?'on':''}">${g[0]} · ${g[1]} GB</button>`).join('')}</div>
+  ${MEM.map(m=>`<div class="mem-row" data-hi="${m[2]}"><span class="nm">${m[0]}</span><div class="mem-track"><div class="mem-bar" style="width:${m[2]/MAXG*100}%"><span class="rng" style="width:${(m[2]-m[1])/m[2]*100}%"></span></div><div class="gpu-line"></div></div><span class="fit"></span></div>`).join('')}
+  <div class="mem-axis"><div></div><div><span>0</span><span>30</span><span>60</span><span>90</span></div><div></div></div>
+  <div style="font-size:12px;color:var(--fg3)">Bars show the estimated range; the hatched end is the upper estimate. The vertical line is the GPU you pick.</div></div>`;
+}
+function bindMem(){
+  const set = g => {
+    $$('#mem .gpu-pick button').forEach(b=>b.classList.toggle('on', +b.dataset.g===g));
+    $$('#mem .mem-row').forEach(r=>{ const hi=+r.dataset.hi, ok = hi<=g;
+      r.classList.toggle('no', !ok); $('.gpu-line',r).style.left = `calc(${g/MAXG*100}% - 1px)`;
+      const f=$('.fit',r); f.className='fit '+(ok?'y':'n'); f.innerHTML = ok? ICON.check+'fits' : 'too big'; });
+  };
+  $$('#mem .gpu-pick button').forEach(b=>b.addEventListener('click',()=>set(+b.dataset.g)));
+  set(10);
+}
+
+/* ---------- Steps ---------- */
+const STEPS = [
+{ id:"data", t:"Generate data", tool:"SDG Hub", h:"Synthetic data, built as a reusable flow",
+  tag:"A flow turns seed data into training data: prompt a teacher model, parse its answers, keep only the ones that pass a judge or rule check.",
+  dev:["One-off Python scripts per dataset","Calls to an outside model API; data leaves your environment","No standard way to filter, reuse or share the pipeline"],
+  osai:["A flow is a YAML file of blocks: build prompt → call LLM → parse → judge and filter","Built-in flows to start from, such as the RAG evaluation dataset flow, which keeps only questions its critic scores 4–5","The LLM block calls a teacher model served on vLLM in the same project; any OpenAI-compatible model works","Re-run the same flow for a new domain by changing the seed data"],
+  ev:["173 of 400","teacher-written burst lines passed the rule check → SFT on them reached 88%, then GRPO 95%"],
+  addon:"<b>Red Hat AI:</b> SDG Hub is built by Red Hat AI Innovation and comes preinstalled in the OpenShift AI 3.5 workbench image (version 0.9.4).",
+  diagram:"sdg", cap:"SDG HUB · BURST-LINE TRAINING DATA · dots are rows",
+  code:{lang:"py", name:"notebooks/01_sdg_hub.ipynb", src:`from sdg_hub import Flow
+
+flow = Flow.from_yaml(str(REPO / "sdg_flows/burst_teacher/flow.yaml"))
+flow.set_model_config(model=f"hosted_vllm/{TEACHER_MODEL}", api_base=TEACHER_URL, api_key="none")
+out = flow.generate(seed, max_concurrency=16)
+answers = [str(a).strip() for a in out["burst_content"]]
+
+# The filter: keep only answers that meet every rule
+keep = [all(ok for *_, ok in burst_rules.check(a, t)) for a, t in zip(answers, tasks)]`},
+  code2:{lang:"yaml", name:"sdg_flows/burst_teacher/flow.yaml", src:`blocks:
+  - block_type: PromptBuilderBlock          # fill the prompt: rules + report
+    block_config:
+      block_name: burst_prompt
+      input_cols: {rules: rules, task: task}
+
+  - block_type: LLMChatBlock                # call the teacher model
+    block_config:
+      block_name: gen_burst
+      async_mode: true
+      temperature: 0.3
+
+  - block_type: LLMResponseExtractorBlock   # take the answer
+    block_config:
+      block_name: parse_burst`},
+  nb:"01_sdg_hub" },
+{ id:"method", t:"Choose a method", tool:"Training Hub", h:"Know what fits before you book a GPU",
+  tag:"The memory estimator answers “will it fit?” per method. OSFT adds a Red Hat option between LoRA and full fine-tuning.",
+  dev:["Trial and error until the job runs out of memory","Each method is a different library with its own config","No protection against the model forgetting what it knew"],
+  osai:["Memory estimator per method, model and GPU, before launch","One API: sft, osft, lora_sft, lora_grpo, embedding_sft","OSFT finds the parts of the weights that hold existing skills, freezes them and trains the rest; one setting, unfreeze_rank_ratio","Red Hat reports 48.4% vs 23.0% for standard fine-tuning across eight tasks learned in sequence"],
+  ev:["7–9 GiB","LoRA on Granite 4.1-3B vs 56–73 GiB for full SFT → LoRA fits our ~10 GB share of one L4 GPU"],
+  addon:"<b>Not run here:</b> OSFT needs 43–55 GiB for this model, more than our GPU share. It is the method to pick when the model must keep its general skills.",
+  diagram:"mem", cap:"",
+  code:{lang:"py", name:"notebooks/02_choose_method.ipynb", src:`from training_hub.profiling.memory_estimator import estimate
+
+for method in ["sft", "osft", "lora"]:
+    print(method.upper(), estimate(training_method=method, model_path=MODEL, num_gpus=1,
+                                   gpu_memory=24_000_000_000, max_tokens_per_gpu=4096))`},
+  code2:{lang:"py", name:"notebooks/02_choose_method.ipynb · OSFT (same call shape as sft)", src:`from training_hub import osft
+
+osft(model_path=MODEL,
+     data_path=str(WS / "data/edgecopilot/train.jsonl"),
+     ckpt_output_dir=str(WS / "checkpoints/edgecopilot-osft"),
+     unfreeze_rank_ratio=0.3,          # train 30% of each layer's directions, protect the other 70%
+     effective_batch_size=16, max_tokens_per_gpu=4096, max_seq_len=1024,
+     num_epochs=2, learning_rate=5e-6)`},
+  nb:"02_choose_method" },
+{ id:"train", t:"Train", tool:"Training Hub · Kubeflow Trainer", h:"One call, from notebook to cluster job",
+  tag:"The same Training Hub call runs in the notebook, as a cluster training job, and inside a pipeline. No rewrite between them.",
+  dev:["Pin torch, transformers, peft and unsloth yourself, and keep them compatible","Rewrite the script when it moves from laptop to cluster","One person per GPU box; no queue"],
+  osai:["lora_sft(**params) in a Red Hat-built, supported training image","Kubeflow Trainer runs the same call on cluster GPUs as a TrainJob, using an image the platform team maintains","Pick a GPU size from a menu; a queue shares GPUs fairly with other teams","Loss and progress visible live in MLflow and the dashboard"],
+  ev:["16.1 min","528 steps on a share of one L4 GPU → 62 MB adapter, 92.7% exact reports (from 6.3%)"],
+  addon:"<b>Red Hat AI:</b> Red Hat's vetted package index carried a safe litellm 1.84 while public PyPI had a compromised 1.107 that steals credentials. Vetted versions are part of the value.",
+  diagram:"train", cap:"FROM NOTEBOOK TO GPU · the same call, run as a cluster job",
+  code:{lang:"py", name:"notebooks/03_train_lora.ipynb · the recipe", src:`from training_hub import lora_sft
+
+params = {
+    "model_path": "/workspace/models/granite-4.1-3b",
+    "data_path": "/workspace/data/edgecopilot/train.jsonl",
+    "ckpt_output_dir": "/workspace/checkpoints/edgecopilot-sft",
+    "lora_r": 16, "lora_alpha": 32, "lora_dropout": 0.0,   # about 31 M trainable weights, a 62 MB adapter
+    "num_epochs": 2, "learning_rate": 2e-4, "lr_scheduler": "cosine",
+    "micro_batch_size": 2, "max_seq_len": 1024,
+    "dataset_type": "chat_template", "field_messages": "messages",
+    ...
+}
+lora_sft(**here(params))        # option 1: in the workbench, if it has a GPU`},
+  code2:{lang:"py", name:"notebooks/03_train_lora.ipynb · option 2, the same call as a TrainJob", src:`from kubeflow.trainer import TrainerClient
+from kubeflow.trainer.rhai import TrainingHubAlgorithms, TrainingHubTrainer
+
+client = TrainerClient()                          # the workbench's own identity
+runtime = next(r for r in client.list_runtimes() if r.name == "training-hub")   # maintained by the platform team
+
+def submit(algorithm, params, gpus=1):
+    return client.train(
+        runtime=runtime,
+        trainer=TrainingHubTrainer(algorithm=algorithm, func_args=params, env=env,
+                                   resources_per_node={"cpu": 4, "memory": "24Gi", "nvidia.com/gpu": gpus}),
+        options=[...])                            # mounts the project volume at /workspace
+
+job = submit(TrainingHubAlgorithms.LORA_SFT, params)`},
+  nb:"03_train_lora" },
+{ id:"align", t:"Align", tool:"Training Hub GRPO · TRL", h:"Fix the mistakes SFT leaves behind",
+  tag:"DPO shows the model “this, not that”. GRPO learns from a checker instead of examples.",
+  dev:["Assemble TRL, verl or ART yourself and wire up rewards","Rollout serving, reward plumbing and checkpoints are your code","Hard to tell whether RL helped or drifted"],
+  osai:["lora_grpo in Training Hub: ART + Unsloth on one GPU, verl for multi-node","Ready-made tool-call rewards; or plug in your own checker","TRL ships in the same supported image for DPO","Every iteration logged; pick the checkpoint on validation, score test once"],
+  ev:["88% → 95%","burst lines meeting every rule: checker-filtered SFT, then GRPO. DPO: 92.7% → 99.7% exact reports"],
+  addon:"<b>Lesson:</b> GRPO pays off where an answer is easy to check but hard to write, and the model is sometimes right. Check headroom first.",
+  diagram:"align", cap:"GRPO LOOP · sample, score, update",
+  code:{lang:"py", name:"burst_rules.py · written in notebooks/01_sdg_hub.ipynb", src:`def reward(text, task):
+    """0..1: half for the share of rules met, half for meeting all of them; halved if too long."""
+    if not (text or "").strip(): return 0.0
+    res = check(text, task)                       # rules B1-B7, one result per rule
+    score = 0.5 * sum(ok for *_, ok in res) / len(res) + 0.5 * all(ok for *_, ok in res)
+    too_long = not next(ok for _, label, ok in res if label.startswith("<="))
+    return round(score * (0.5 if too_long else 1.0), 4)
+
+def reward_fn(data_source, solution_str, ground_truth):
+    """The signature Training Hub's lora_grpo calls."""
+    return reward(solution_str, json.loads(ground_truth))`},
+  code2:{lang:"py", name:"grpo_burst.py · written in notebooks/03_train_lora.ipynb", src:`from training_hub import lora_grpo
+from burst_rules import reward_fn
+
+lora_grpo(backend="art", model_path=MERGED, ckpt_output_dir=OUT,
+          data_path="/workspace/data/burst/train.jsonl",
+          reward_fn=reward_fn,                       # the rule checker from notebook 01
+          num_iterations=ITERS, group_size=8, prompt_batch_size=16, learning_rate=1e-5, ...)`},
+  nb:"03_train_lora" },
+{ id:"track", t:"Track and register", tool:"MLflow", h:"Every run, every curve, one registry",
+  tag:"MLflow is part of the platform and scoped to the project. Promotion is moving an alias.",
+  dev:["Stand up, secure and back up your own MLflow server","Runs scattered across laptops and notebooks","“Which adapter is in production?” answered from memory"],
+  osai:["MLflow comes with the platform: each project gets its own workspace and access control","Training runs logged automatically, with live loss","Model registry with named pointers (aliases): previous, challenger, champion, edge","Failed runs kept next to successful ones, for audit"],
+  ev:["4 versions","in registry sentinel7-edge-copilot; champion = SFT v2 at 99.7–100% exact"],
+  addon:"<b>Platform:</b> the OpenShift AI Model Registry is also available for a cluster-wide catalogue across projects.",
+  diagram:"track", cap:"MLFLOW → REGISTRY · the alias moves, serving follows",
+  code:{lang:"py", name:"notebooks/06_gate_promote.ipynb", src:`from mlflow.tracking import MlflowClient
+mc, REG = MlflowClient(), "sentinel7-edge-copilot"
+
+for name, desc in [("edgecopilot-sft", "SFT on 2,400 notes"), ("edgecopilot-sft-v2", "SFT + 600 radio-style notes")]:
+    if (WS / "checkpoints" / name / "adapter_model.safetensors").exists():
+        versions[name] = register(f"pvc://{PVC}/checkpoints/{name}", desc)
+
+mc.set_registered_model_alias(REG, "champion", versions["edgecopilot-sft"])
+mc.set_registered_model_alias(REG, "challenger", versions["edgecopilot-sft-v2"])
+mc.set_registered_model_alias(REG, "edge", versions["edge"])`},
+  nb:"06_gate_promote" },
+{ id:"serve", t:"Serve", tool:"vLLM · llama.cpp", h:"One GPU endpoint, one edge twin",
+  tag:"vLLM serves the base model and several adapters together. A CPU copy of the 4-bit edge model runs in the cluster, so it is tested before it ships.",
+  dev:["Run and secure vLLM yourself, often one model per process","Build llama.cpp by hand on each device","No way to test the edge model the same way as the GPU one"],
+  osai:["A managed vLLM endpoint (KServe) with TLS, login and a chosen GPU size","Base + 3 LoRA adapters on one endpoint, inside about 10 GB of GPU memory","llama.cpp plugged in as a custom serving runtime: the in-cluster CPU copy (the “edge twin”) runs the exact GGUF file the laptop uses","Same scorer for GPU and CPU before anything goes to the field"],
+  ev:["97%","exact reports on CPU, 4-bit, 2.1 GB, 0 invented fields; GPU 99.7–100%"],
+  addon:"<b>Edge story:</b> after the first install, a model update is a 62 MB adapter, small enough for a satellite link.",
+  diagram:"serve", cap:"SERVING · GPU endpoint and CPU edge twin",
+  code:{lang:"yaml", name:"notebooks/04_serve_vllm.ipynb · the LLMInferenceService it applies", src:`kind: LLMInferenceService
+spec:
+  baseRefs: [{name: v3-5-0-kserve-config-llm-single-node-template-nvidia-cuda}]
+  model: {name: granite-4.1-3b, uri: "pvc://workspace/models/granite-4.1-3b"}
+  template:
+    containers:
+    - name: main
+      args:
+      - --max-model-len=8192
+      - --gpu-memory-utilization=0.42      # about 10 GB on a 24 GB L4
+      - --max-num-seqs=8
+      - --enable-lora
+      - --max-loras=3
+      - --max-lora-rank=16
+      - --lora-modules
+      - edgecopilot-sft=/mnt/models/lora/edgecopilot-sft
+      - edgecopilot-sft-v2=/mnt/models/lora/edgecopilot-sft-v2
+      - burst-sft=/mnt/models/lora/burst-sft`},
+  code2:{lang:"yaml", name:"notebooks/05_edge_llamacpp.ipynb · the ServingRuntime it applies", src:`kind: ServingRuntime                   # llama.cpp on CPU
+spec:
+  supportedModelFormats: [{name: gguf, autoSelect: true}]
+  containers:
+  - name: kserve-container
+    image: ghcr.io/ggml-org/llama.cpp:server-b11960
+    command: ["/app/llama-server"]
+    args: ["--model", "/mnt/models/edgecopilot-Q4_K_M.gguf", "--alias", "edgecopilot", "--host", "0.0.0.0", "--port", "8080",
+           "--ctx-size", "4096", "--parallel", "1", "--threads", "4", "--jinja"]`},
+  nb:"04_serve_vllm · 05_edge_llamacpp" },
+{ id:"gate", t:"Gate and promote", tool:"AI Pipelines · EvalHub", h:"Promotion by evidence, not by opinion",
+  tag:"A pipeline scores champion and challenger on the same held-out data and moves the alias only if the challenger wins.",
+  dev:["Someone compares numbers in a spreadsheet","No record of why a model was promoted","Evaluation code differs from run to run"],
+  osai:["AI Pipelines (Kubeflow Pipelines), started from the dashboard: load data → evaluate both → compare → promote","Decision and scorecards recorded in MLflow every run","Ready-made Red Hat pipelines for fine-tuning: train → evaluate → register","EvalHub (generally available in 3.5) adds risk and compliance evaluation with auditable reports"],
+  ev:["100 vs 100","current model (v2) vs challenger (DPO) on 50 held-out notes → current model kept, decision logged"],
+  addon:"<b>Platform:</b> pipelines run inside the project; no external CI system is needed for the promotion check.",
+  diagram:"gate", cap:"PIPELINE RUN · eval-gate-promote",
+  code:{lang:"py", name:"notebooks/06_gate_promote.ipynb · the pipeline", src:`@dsl.pipeline(name="sentinel7-eval-gate-promote")
+def eval_gate_promote(url: str, current: str, challenger: str, challenger_version: str,
+                      n_notes: int = 50, registered_model: str = "sentinel7-edge-copilot"):
+    notes = load_notes(n=n_notes)
+    a = evaluate(model=current, url=url, notes=notes.outputs["notes"])
+    b = evaluate(model=challenger, url=url, notes=notes.outputs["notes"])
+    g = gate(cur_exact=a.outputs["exact"], cur_inv=a.outputs["invented"],
+             new_exact=b.outputs["exact"], new_inv=b.outputs["invented"])
+    record(decision=g.output, registered_model=registered_model, ...)   # moves "champion" on promotion`},
+  nb:"06_gate_promote" }
+];
+let cur = 0, mode = "osai";
+const stepper = $('#stepper'), panel = $('#panel');
+stepper.innerHTML = STEPS.map((s,i)=>`<button class="step-tab" role="tab" id="tab-${s.id}" aria-controls="panel" data-i="${i}"><span class="n">0${i+1}</span><span class="t">${s.t}</span><span class="tool">${s.tool}</span></button>`).join('');
+function codeBlock(c){ return `<div class="code"><div class="code-head"><span class="mono">${c.name}</span><button class="copy" type="button">Copy</button></div><pre data-raw="${esc(c.src).replace(/"/g,'&quot;')}">${hl(c.src,c.lang)}</pre></div>`; }
+function renderStep(i, focus){
+  cur = i; const s = STEPS[i];
+  $$('.step-tab').forEach((b,k)=>{ b.classList.toggle('on',k===i); b.classList.toggle('done',k<i); b.setAttribute('aria-selected',k===i); b.tabIndex = k===i?0:-1; });
+  const list = (mode==='osai'? s.osai : s.dev).map(x=>`<li>${mode==='osai'?ICON.check:ICON.minus}<span>${x}</span></li>`).join('');
+  panel.innerHTML = `<div class="panel-l fade-swap">
+      <div class="eyebrow"><b>Step 0${i+1}</b> · ${s.tool}</div>
+      <h3>${s.h}</h3><p class="tagline">${s.tag}</p>
+      <div class="switcher" role="group" aria-label="Compare"><button type="button" data-m="dev" class="${mode==='dev'?'on':''}">Dev environment</button><button type="button" data-m="osai" class="${mode==='osai'?'on':''}">On OpenShift AI</button></div>
+      <ul class="cmp-list ${mode}">${list}</ul>
+      <div class="evidence"><span class="k">Our evidence</span><span class="v">${s.ev[0]}</span><p>${s.ev[1]}</p></div>
+      <div class="addon">${s.addon}</div>
+      <a class="nb-link" href="#start">Notebook ${s.nb} ${ICON.arrow}</a>
+    </div>
+    <div class="panel-r fade-swap">
+      <div class="diagram">${s.diagram==='mem'? memHTML() : `<div class="cap"><span>${s.cap}</span></div>${DIAG[s.diagram]}`}</div>
+      ${codeBlock(s.code)}${s.code2?codeBlock(s.code2):''}
+    </div>`;
+  if(s.diagram==='mem') bindMem();
+  $$('.switcher button', panel).forEach(b=>b.addEventListener('click',()=>{ mode=b.dataset.m; renderStep(cur); }));
+  bindCopy(panel);
+  $('#prev').disabled = i===0; $('#next').disabled = i===STEPS.length-1;
+  $('#next span').textContent = i<STEPS.length-1 ? `Next: ${STEPS[i+1].t}` : 'Last step';
+  if(focus) $$('.step-tab')[i].focus();
+}
+$$('.step-tab').forEach(b=>b.addEventListener('click',()=>renderStep(+b.dataset.i)));
+stepper.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'&&cur<STEPS.length-1){renderStep(cur+1,true);e.preventDefault();} if(e.key==='ArrowLeft'&&cur>0){renderStep(cur-1,true);e.preventDefault();} });
+$('#prev').addEventListener('click',()=>cur>0&&renderStep(cur-1));
+$('#next').addEventListener('click',()=>cur<STEPS.length-1&&renderStep(cur+1));
+renderStep(0);
+
+function bindCopy(root){
+  $$('.copy', root).forEach(b=>b.addEventListener('click',()=>{
+    const pre = b.closest('.code').querySelector('pre'); const txt = pre.textContent;
+    const done = ()=>{ b.textContent='Copied'; setTimeout(()=>b.textContent='Copy',1500); };
+    try{ navigator.clipboard.writeText(txt).then(done, ()=>{ selectText(pre); b.textContent='Selected'; }); }catch(e){ selectText(pre); }
+  }));
+}
+function selectText(el){ const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+/* ---------- Method picker ---------- */
+const METHODS = [
+ {q:"Wrong task or format", m:"SFT", via:"Training Hub lora_sft", why:"Show the model the exact output it should produce. Format and task are learned from examples.", b:"6.3%", a:"92.7%", k:"exact BD-SCR reports"},
+ {q:"The same mistake every time", m:"DPO", via:"TRL, in the Red Hat training image", why:"Pair the right answer with the model's own wrong one. Balance the pairs so the fix does not overshoot.", b:"92.7%", a:"99.7%", k:"exact reports; invented fields 7.0% → 0.3%"},
+ {q:"A gap in the training data", m:"More data", via:"SDG or generator + the same recipe", why:"When errors cluster on one style of input, add that style and retrain. Often the simplest fix.", b:"92.7%", a:"99.7–100%", k:"exact reports with 600 radio-style notes added"},
+ {q:"Breaks rules you can check", m:"GRPO", via:"Training Hub lora_grpo", why:"Sample several answers, score them with a checker, move toward the better ones. Works best after SFT on examples that already pass the checker.", b:"88.0%", a:"95.0%", k:"satellite messages meeting all 7 rules"},
+ {q:"Must keep general skills", m:"OSFT", via:"Training Hub osft", why:"Protects the directions that hold existing skills and trains in the rest. For adding domain behaviour without forgetting.", b:"23.0%", a:"48.4%", k:"Red Hat-reported, 8 sequential tasks (not run here)"},
+ {q:"Search misses crew jargon", m:"Embedding SFT", via:"Training Hub embedding_sft + SDG Hub", why:"Fine-tune the retriever on synthetic query–chunk pairs written in the crew's shorthand.", b:"71.5%", a:"77.6%", k:"retriever Recall@1 on 228 held-out queries"}
+];
+const mk = $('#mistakes');
+mk.innerHTML = METHODS.map((m,i)=>`<button class="mistake" type="button" data-i="${i}" aria-pressed="false"><span class="q">${m.q}</span><span class="tag">${m.m}</span></button>`).join('');
+function showMethod(i){
+  const m = METHODS[i];
+  $$('.mistake').forEach((b,k)=>{ b.classList.toggle('on',k===i); b.setAttribute('aria-pressed',k===i); });
+  const v = $('#verdict');
+  v.innerHTML = `<div class="eyebrow"><b>Use</b></div><div class="m">${m.m}</div><div class="via mono">${m.via}</div><p class="why">${m.why}</p>
+   <div class="ba"><div><span class="k">BEFORE</span><span class="v">${m.b}</span></div><span class="arrow">→</span><div><span class="k">AFTER</span><span class="v after">${m.a}</span></div></div>
+   <p class="via">${m.k}</p>`;
+  v.classList.remove('fade-swap'); void v.offsetWidth; v.classList.add('fade-swap');
+}
+$$('.mistake').forEach(b=>b.addEventListener('click',()=>showMethod(+b.dataset.i)));
+showMethod(0);
+
+/* ---------- Results ---------- */
+const RES = [
+ {id:"edge", tab:"Edge Copilot", h:"Radio note → exact JSON report", metric:"Reports with every field right, 300 held-out notes (%)", rows:[
+   ["Granite 4.1-3B untuned","1,449-token prompt",6.3,""],
+   ["Llama 3.3 70B","watsonx.ai · same prompt",46.3,"ref"],
+   ["gpt-oss-120b","watsonx.ai · same prompt",75.0,"ref"],
+   ["SFT v1","Training Hub · 94-token prompt",92.7,"hl"],
+   ["v1 + DPO","394 balanced pairs",99.7,"hl"],
+   ["SFT v2","+600 radio-style notes",99.7,"hl"]],
+  side:[["15×","shorter prompt: 94 tokens vs 1,449, on every request"],["10.7% → 0%","fault meanings invented by the model"],["97%","same model, 4-bit on a laptop CPU (first 100 notes)"]]},
+ {id:"burst", tab:"Satellite message", h:"Report → one satellite message that follows all 7 rules", metric:"Messages meeting every rule, 200 held-out reports (%)", rows:[
+   ["Untuned 3B","",42.5,""],
+   ["SFT on teacher bursts","SDG Hub · unfiltered",31.5,""],
+   ["GRPO from base","no examples",66.5,"hl"],
+   ["SFT on checked bursts","173 of 400 passed",88.0,"hl"],
+   ["Checked SFT + GRPO","Training Hub lora_grpo",95.0,"hl"]],
+  side:[["47% → 4%","reports with a missed item"],["43%","of teacher-written bursts passed the checker"],["2 uses","of one checker: filter SFT data, then GRPO reward"]]},
+ {id:"ret", tab:"Retriever", h:"Crew shorthand → the right manual chunk", metric:"Recall@1, 228 held-out queries (%)", rows:[
+   ["Granite embedding 278M","untuned",71.5,""],
+   ["Embedding SFT v1","6,498 label pairs",75.9,"hl"],
+   ["Embedding SFT v3","935 SDG Hub queries",77.6,"hl"]],
+  side:[["93.0 → 96.9","Recall@5"],["0.808 → 0.864","mean reciprocal rank"],["4.1 min","training time on GPU"]]}
+];
+const rt = $('#res-tabs');
+rt.innerHTML = RES.map((r,i)=>`<button class="tab" role="tab" type="button" data-i="${i}">${r.tab}</button>`).join('');
+function showRes(i){
+  const r = RES[i];
+  $$('.tab',rt).forEach((b,k)=>{ b.classList.toggle('on',k===i); b.setAttribute('aria-selected',k===i); });
+  const el = $('#res');
+  el.innerHTML = `<div class="chart fade-swap"><h3>${r.h}</h3><p class="metric">${r.metric}</p>
+     <div class="bars">${r.rows.map(x=>`<div class="bar-row ${x[3]}" tabindex="0"><span class="nm">${x[0]}${x[1]?`<small>${x[1]}</small>`:''}</span>
+       <div class="bar-track"><div class="bar-fill" data-w="${x[2]}"></div><span class="bar-val num" style="--w:0%">${x[2].toFixed(1)}%</span></div>
+       <span class="tip">${x[0]}: ${x[2].toFixed(1)}%${x[1]?' · '+x[1]:''}</span></div>`).join('')}</div>
+     <div class="axis"><div></div><div><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div></div>
+     <div class="legend"><span><i style="background:var(--accent)"></i>Tuned on OpenShift AI</span><span><i style="background:var(--muted-bar)"></i>Untuned or baseline</span>${r.rows.some(x=>x[3]==='ref')?'<span><i style="border:1.5px dashed var(--border-strong)"></i>Large hosted model, reference</span>':''}</div>
+   </div>
+   <div class="res-side fade-swap">${r.side.map(s=>`<div class="kpi"><div class="v">${s[0]}</div><p>${s[1]}</p></div>`).join('')}</div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    $$('.bar-row',el).forEach(row=>{ const f=$('.bar-fill',row), w=f.dataset.w*0.86; f.style.width=w+'%'; $('.bar-val',row).style.setProperty('--w', w+'%'); });
+  }));
+}
+$$('.tab',rt).forEach(b=>b.addEventListener('click',()=>showRes(+b.dataset.i)));
+showRes(0);
+
+/* ---------- Compare table ---------- */
+const CMP = [
+ ["Synthetic data","Scripts calling an outside API","SDG Hub YAML flows, teacher model served in the project","rh","173 of 400 teacher examples kept; no data left the project"],
+ ["Method choice","Trial and error, out-of-memory crashes","Memory estimator; one API for SFT, OSFT, LoRA, GRPO, embeddings","rh","LoRA 7–9 GiB vs SFT 56–73 GiB"],
+ ["Keep general skills","No protection; the model forgets","OSFT, built by Red Hat AI Innovation","rh","Red Hat-reported 48.4% vs 23.0% (not run here)"],
+ ["Safe, compatible stack","Pin torch, transformers, peft, unsloth yourself","Red Hat-built images and a vetted package index, with support","rh","Vetted index had a safe litellm 1.84; PyPI had a compromised 1.107"],
+ ["GPU access","One box per person","GPU sizes picked from a menu; a fair queue across teams","oa","16-min LoRA on a share of one L4 while serving kept answering"],
+ ["Scale out","Rewrite for multi-GPU","Kubeflow Trainer runs the same call on many GPUs or nodes","oa","Same parameters from notebook to cluster job"],
+ ["Tracking and audit","Stand up your own MLflow","MLflow built in, per project, with a model registry","oa","Every run logged, failures included"],
+ ["Serving","Run and secure vLLM yourself","Managed vLLM endpoint: several LoRA adapters, TLS, login","oa","Base + 3 adapters on one endpoint"],
+ ["Edge","Hand-built llama.cpp per device","llama.cpp as a serving runtime; test the edge model in the cluster first","oa","97% exact on CPU, 2.1 GB, offline"],
+ ["Promotion","A person decides","A pipeline compares models and promotes the winner; EvalHub for risk checks","oa","Pipeline run kept the current model (100 vs 100)"],
+ ["Isolation","Your responsibility","Projects with their own access control; data stays inside","oa","Whole workflow in one project"]
+];
+$('#cmp-body').innerHTML = CMP.map(r=>`<tr><td>${r[0]}</td><td class="dev">${r[1]}</td><td class="osai">${r[2]}<span class="who ${r[3]}">${r[3]==='rh'?'RED HAT AI':'PLATFORM'}</span></td><td class="ev">${r[4]}</td></tr>`).join('');
+
+/* ---------- Notebooks ---------- */
+const REPO_URL = "https://github.com/knijesh/sentinel7-openshift-ai";
+const NBS = [
+ ["01","SDG Hub","A teacher model writes examples through an SDG Hub flow; a rule checker keeps the good ones.","01_sdg_hub"],
+ ["02","Choose a method","Memory estimator per method; when to pick LoRA, OSFT or full SFT.","02_choose_method"],
+ ["03","Train with Training Hub","lora_sft in the notebook, then as a Kubeflow TrainJob; lora_grpo with the checker as reward.","03_train_lora"],
+ ["04","Serve on vLLM","Base model and adapters on one endpoint; before vs after on held-out notes.","04_serve_vllm"],
+ ["05","Edge with llama.cpp","Merge, convert to 4-bit GGUF, serve on CPU in the cluster, then on a laptop offline.","05_edge_llamacpp"],
+ ["06","Gate and promote","MLflow registry and a pipeline that promotes a challenger only if it is better.","06_gate_promote"]
+];
+$('#nbs').innerHTML = NBS.map(n=>`<a class="nb" href="${REPO_URL}/blob/main/notebooks/${n[3]}.ipynb" target="_blank" rel="noopener"><span class="n">NOTEBOOK ${n[0]}</span><h4>${n[1]}</h4><p>${n[2]}</p><div class="foot"><span class="mono" style="color:var(--fg3)">${n[3]}.ipynb</span><span class="go">Open ${ICON.arrow}</span></div></a>`).join('');
+
+/* ---------- Masthead active section ---------- */
+const links = $$('.mast nav a');
+const secs = links.map(a=>$(a.getAttribute('href')));
+if('IntersectionObserver' in window){
+  const io = new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ links.forEach(l=>l.classList.toggle('on', l.getAttribute('href')==='#'+e.target.id)); } }); }, {rootMargin:'-45% 0px -50% 0px'});
+  secs.forEach(s=>s&&io.observe(s));
+}
+})();
+</script>
+</body>
+</html>
