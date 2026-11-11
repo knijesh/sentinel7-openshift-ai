@@ -19,6 +19,8 @@ Built by Nijesh Kanjinghat.
 | **Interactive overview** | [The value of OpenShift AI, step by step →](https://knijesh.github.io/sentinel7-openshift-ai/) |
 | **Demo app (replay)** | [Sentinel-7 Ops Console →](https://knijesh.github.io/sentinel7-openshift-ai/console/) Pick a held-out radio note and compare five models side by side: the untuned model, three fine-tuned adapters on vLLM (GPU) and the 4-bit edge model on llama.cpp (CPU). Every answer is real, recorded on Red Hat OpenShift AI. **For the live instance, contact Nijesh Kanjinghat.** |
 
+**Prefer clicking to code?** [DASHBOARD.md](DASHBOARD.md) walks through the same workflow in the OpenShift AI dashboard, with screenshots: workbench, training pipeline form, MLflow, the deploy wizard, the playground and the promotion pipeline.
+
 ## The story: one radio note, two jobs
 
 ```mermaid
@@ -138,6 +140,7 @@ one node.
 | `data/burst/` | Reports and priorities for the burst line: train 400, val 100, test 200; teacher answers (all, and checker-approved) |
 | `sdg_flows/burst_teacher/` | The SDG Hub flow (YAML) and its prompt |
 | `deploy/00-project-setup.yaml` | One-time project setup |
+| `DASHBOARD.md`, `docs/ui/` | The workflow in the OpenShift AI dashboard, with screenshots |
 
 ## Learn more
 

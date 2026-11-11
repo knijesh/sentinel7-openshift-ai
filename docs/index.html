@@ -425,6 +425,12 @@ table.terms td b{font-weight:600}
 .nbs{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1px; background:var(--border); border:1px solid var(--border)}
 .nb{background:var(--bg); padding:24px; display:flex; flex-direction:column; gap:10px; min-height:220px; transition:background .15s; color:var(--fg); text-decoration:none!important; position:relative}
 .nb:hover{background:var(--layer-hover)}
+.nb.nb-wide{grid-column:1/-1; min-height:0}
+.nb-shots{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:6px 0 4px}
+.nb-shots figure{margin:0; display:flex; flex-direction:column; gap:6px}
+.nb-shots img{display:block; width:100%; aspect-ratio:16/9; object-fit:cover; object-position:left top; border:1px solid var(--border); background:var(--layer)}
+.nb-shots figcaption{font:400 12px var(--f-mono); color:var(--fg3)}
+@media (max-width:760px){ .nb-shots{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .nb .n{font:500 12px var(--f-mono); color:var(--fg3)}
 .nb h4{font-size:20px; font-weight:400}
 .nb p{font-size:14px; color:var(--fg2)}
@@ -1372,7 +1378,8 @@ const NBS = [
  ["05","Edge with llama.cpp","Merge, convert to 4-bit GGUF, serve on CPU in the cluster, then on a laptop offline.","05_edge_llamacpp"],
  ["06","Gate and promote","MLflow registry and a pipeline that promotes a challenger only if it is better.","06_gate_promote"]
 ];
-$('#nbs').innerHTML = NBS.map(n=>`<a class="nb" href="${REPO_URL}/blob/main/notebooks/${n[3]}.ipynb" target="_blank" rel="noopener"><span class="n">NOTEBOOK ${n[0]}</span><h4>${n[1]}</h4><p>${n[2]}</p><div class="foot"><span class="mono" style="color:var(--fg3)">${n[3]}.ipynb</span><span class="go">Open ${ICON.arrow}</span></div></a>`).join('');
+$('#nbs').innerHTML = NBS.map(n=>`<a class="nb" href="${REPO_URL}/blob/main/notebooks/${n[3]}.ipynb" target="_blank" rel="noopener"><span class="n">NOTEBOOK ${n[0]}</span><h4>${n[1]}</h4><p>${n[2]}</p><div class="foot"><span class="mono" style="color:var(--fg3)">${n[3]}.ipynb</span><span class="go">Open ${ICON.arrow}</span></div></a>`).join('')
+  + `<a class="nb nb-wide" href="${REPO_URL}/blob/main/DASHBOARD.md" target="_blank" rel="noopener"><span class="n">NO CODE · OPENSHIFT AI DASHBOARD</span><h4>Prefer clicking? The same workflow in the dashboard</h4><p>Step by step with screenshots: workbench, a training pipeline as a form, MLflow, the deploy wizard, the playground and the promotion pipeline.</p><div class="nb-shots"><figure><img src="ui/02-workbench-image.jpg" alt="Create workbench in the OpenShift AI dashboard" loading="lazy" width="320" height="180"><figcaption>Create workbench</figcaption></figure><figure><img src="ui/04-create-run-parameters.jpg" alt="Training run as a form in the OpenShift AI dashboard" loading="lazy" width="320" height="180"><figcaption>Training run as a form</figcaption></figure><figure><img src="ui/11-deploy-llm-d-gpu.jpg" alt="Deploy wizard in the OpenShift AI dashboard" loading="lazy" width="320" height="180"><figcaption>Deploy wizard</figcaption></figure><figure><img src="ui/06-pipeline-graph.jpg" alt="Promotion pipeline in the OpenShift AI dashboard" loading="lazy" width="320" height="180"><figcaption>Promotion pipeline</figcaption></figure></div><div class="foot"><span class="mono" style="color:var(--fg3)">DASHBOARD.md</span><span class="go">Open ${ICON.arrow}</span></div></a>`;
 
 /* ---------- Masthead active section ---------- */
 const links = $$('.mast nav a');
